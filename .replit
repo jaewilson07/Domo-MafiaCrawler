@@ -1,2 +1,13 @@
 [nix]
 channel = "stable-24_05"
+
+[workflows]
+
+[[workflows.workflow]]
+name = "Test"
+author = 40001166
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pytest test_route.py -v"
