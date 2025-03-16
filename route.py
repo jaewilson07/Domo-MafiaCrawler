@@ -8,9 +8,12 @@ load_dotenv()
 
 
 # Initializes your app with your bot token and app token
+if "SLACK_BOT_TOKEN" not in os.environ:
+    raise ValueError("SLACK_BOT_TOKEN environment variable is required")
+
 app = App(
     token=os.environ["SLACK_BOT_TOKEN"],
-    # signing_secret=os.environ.get("SLACK_SIGNING_SECRET"),
+    signing_secret=os.environ.get("SLACK_SIGNING_SECRET"),
 )
 
 
