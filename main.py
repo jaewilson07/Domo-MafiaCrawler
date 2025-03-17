@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[25]:
+# In[1]:
 
 
 from dotenv import load_dotenv
@@ -18,13 +18,13 @@ import domolibrary.client.DomoAuth as dmda
 import agent_mafia.routes.domo as domo_routes
 
 
-# In[26]:
+# In[2]:
 
 
 load_dotenv()
 
 
-# In[27]:
+# In[3]:
 
 
 # WORKGROUP_PREFIX = "DUG_"
@@ -47,7 +47,7 @@ async_slack_app = AsyncSlackApp(
 )
 
 
-# In[28]:
+# In[4]:
 
 
 domo_auth = dmda.DomoTokenAuth(
@@ -56,7 +56,7 @@ domo_auth = dmda.DomoTokenAuth(
 )
 
 
-# In[29]:
+# In[5]:
 
 
 async def trigger_domo_llms_workflow(
@@ -89,22 +89,22 @@ async def trigger_domo_llms_workflow(
     )
 
 
-# In[30]:
+# In[6]:
 
 
 # await trigger_domo_llms_workflow(question='what is magic etl?',
 #                                  channel_id=SLACK_CHANNEL_ID,
 #                                  message_id=SLACK_MESSAGE_ID,
 #                                  user_id=USER_ID,
-#                                  debug_api=True,
+#                                  debug_api=False,
 #                                  slack_bot_token=SLACK_BOT_TOKEN)
 
 
-# In[31]:
+# In[7]:
 
 
 @async_slack_app.event("app_mention")  # Listen for app mentions
-async def handle_app_mention(event, say):
+async def handle_app_mention(event, say, debug_api:bool = False):
     """Handles app mentions and responds with a random yes/no."""
 
     print(event.keys())
@@ -126,11 +126,11 @@ async def handle_app_mention(event, say):
         channel_id=channel_id,
         message_id=said["ts"],
         user_id=user_id,
-        debug_api=True,
+        debug_api=debug_api,
     )
 
 
-# In[ ]:
+# In[8]:
 
 
 async def main():
