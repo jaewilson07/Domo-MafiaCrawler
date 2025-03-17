@@ -4,6 +4,12 @@
 # In[1]:
 
 
+# %pip install agent_mafia --upgrade
+
+
+# In[2]:
+
+
 from dotenv import load_dotenv
 import os
 import asyncio
@@ -18,17 +24,17 @@ import domolibrary.client.DomoAuth as dmda
 import agent_mafia.routes.domo as domo_routes
 
 
-# In[2]:
+# In[3]:
 
 
 load_dotenv()
 
 
-# In[3]:
+# In[ ]:
 
 
-# WORKGROUP_PREFIX = "DUG_"
-WORKGROUP_PREFIX = ""
+WORKGROUP_PREFIX = "DUG_"
+# WORKGROUP_PREFIX = ""
 
 SLACK_BOT_TOKEN = os.environ[f"{WORKGROUP_PREFIX}SLACK_BOT_TOKEN"]
 
@@ -36,9 +42,9 @@ SLACK_BOT_TOKEN = os.environ[f"{WORKGROUP_PREFIX}SLACK_BOT_TOKEN"]
 SLACK_APP_TOKEN = os.environ[f"{WORKGROUP_PREFIX}SLACK_APP_TOKEN"]
 SLACK_SIGNING_SECRET = os.environ[f"{WORKGROUP_PREFIX}SLACK_SIGNING_SECRET"]
 
-# for testing
+#for testing
 # SLACK_CHANNEL_ID='C08HR2Z1GMU'
-# SLACK_MESSAGE_ID='1742237263.728579'
+# SLACK_MESSAGE_ID='1742237263.728579' 
 # USER_ID='U08HR2YS0S2'
 
 async_slack_app = AsyncSlackApp(
@@ -46,8 +52,12 @@ async_slack_app = AsyncSlackApp(
     signing_secret=SLACK_SIGNING_SECRET,
 )
 
+# print(await async_slack_app.client.auth_test())
 
-# In[4]:
+
+# 
+
+# In[5]:
 
 
 domo_auth = dmda.DomoTokenAuth(
@@ -56,7 +66,7 @@ domo_auth = dmda.DomoTokenAuth(
 )
 
 
-# In[5]:
+# In[6]:
 
 
 async def trigger_domo_llms_workflow(
@@ -89,7 +99,7 @@ async def trigger_domo_llms_workflow(
     )
 
 
-# In[6]:
+# In[7]:
 
 
 # await trigger_domo_llms_workflow(question='what is magic etl?',
@@ -100,11 +110,11 @@ async def trigger_domo_llms_workflow(
 #                                  slack_bot_token=SLACK_BOT_TOKEN)
 
 
-# In[7]:
+# In[8]:
 
 
 @async_slack_app.event("app_mention")  # Listen for app mentions
-async def handle_app_mention(event, say, debug_api: bool = False):
+async def handle_app_mention(event, say, debug_api:bool = False):
     """Handles app mentions and responds with a random yes/no."""
 
     print(event.keys())
@@ -130,7 +140,7 @@ async def handle_app_mention(event, say, debug_api: bool = False):
     )
 
 
-# In[8]:
+# In[9]:
 
 
 async def main():
@@ -141,5 +151,3 @@ async def main():
 if __name__ == "__main__":
     asyncio.run(main())
 
-
-# In[ ]:
