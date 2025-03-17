@@ -20,7 +20,6 @@ print(SLACK_BOT_TOKEN)
 SLACK_APP_TOKEN = os.environ[f"{WORKGROUP_PREFIX}_SLACK_APP_TOKEN"]
 SLACK_SIGNING_SECRET = os.environ[f"{WORKGROUP_PREFIX}_SLACK_SIGNING_SECRET"]
 
-
 async_slack_app = AsyncSlackApp(
     token=SLACK_BOT_TOKEN,
     signing_secret=SLACK_SIGNING_SECRET,
