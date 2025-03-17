@@ -1,3 +1,9 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[1]:
+
+
 from dotenv import load_dotenv
 import os
 import asyncio
@@ -9,28 +15,37 @@ from slack_bolt.adapter.socket_mode.async_handler import AsyncSocketModeHandler
 
 import domolibrary.client.DomoAuth as dmda
 
-import domo_routes
+import agent_mafia.routes.domo as domo_routes
+
+
+# In[2]:
+
 
 load_dotenv()
 
-WORKGROUP_PREFIX = "DUG"
-SLACK_BOT_TOKEN = os.environ[f"{WORKGROUP_PREFIX}_SLACK_BOT_TOKEN"]
 
-print(SLACK_BOT_TOKEN)
-SLACK_APP_TOKEN = os.environ[f"{WORKGROUP_PREFIX}_SLACK_APP_TOKEN"]
-SLACK_SIGNING_SECRET = os.environ[f"{WORKGROUP_PREFIX}_SLACK_SIGNING_SECRET"]
+# In[3]:
+
+
+# WORKGROUP_PREFIX = "DUG_"
+WORKGROUP_PREFIX = ""
 
 async_slack_app = AsyncSlackApp(
     token=SLACK_BOT_TOKEN,
     signing_secret=SLACK_SIGNING_SECRET,
 )
 
-load_dotenv()
+
+# In[4]:
+
 
 domo_auth = dmda.DomoTokenAuth(
     domo_access_token=os.environ["DOMO_ACCESS_TOKEN"],
     domo_instance=os.environ["DOMO_INSTANCE"],
 )
+
+
+# In[5]:
 
 
 async def trigger_domo_llms_workflow(
@@ -63,8 +78,22 @@ async def trigger_domo_llms_workflow(
     )
 
 
+# In[6]:
+
+
+# await trigger_domo_llms_workflow(question='what is magic etl?',
+#                                  channel_id=SLACK_CHANNEL_ID,
+#                                  message_id=SLACK_MESSAGE_ID,
+#                                  user_id=USER_ID,
+#                                  debug_api=False,
+#                                  slack_bot_token=SLACK_BOT_TOKEN)
+
+
+# In[7]:
+
+
 @async_slack_app.event("app_mention")  # Listen for app mentions
-async def handle_app_mention(event, say):
+async def handle_app_mention(event, say, debug_api:bool = False):
     """Handles app mentions and responds with a random yes/no."""
 
     print(event.keys())
@@ -86,8 +115,11 @@ async def handle_app_mention(event, say):
         channel_id=channel_id,
         message_id=said["ts"],
         user_id=user_id,
-        debug_api=True,
+        debug_api=debug_api,
     )
+
+
+# In[8]:
 
 
 async def main():
@@ -97,3 +129,10 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
+
+# In[ ]:
+
+
+
+
