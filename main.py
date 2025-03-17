@@ -77,7 +77,7 @@ async def handle_app_mention(event, say):
     question = event["text"]
     clean_question = slack_routes.remove_slack_user_mentions(question)
 
-    await say(
+    said = await say(
         f'<@{user_id}> asked: "{clean_question}"\nGive me a sec to think about it.  But in the meantime, have you tried googling it?',
         thread_ts=message_id,
     )  # Send the response back to Slack
@@ -85,7 +85,7 @@ async def handle_app_mention(event, say):
     await trigger_domo_llms_workflow(
         question=clean_question,
         channel_id=channel_id,
-        message_id=message_id,
+        message_id=said["ts"],
         user_id=user_id,
         debug_api=True,
     )
