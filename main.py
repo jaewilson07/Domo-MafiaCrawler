@@ -1,12 +1,9 @@
-<<<<<<< HEAD
-=======
 #!/usr/bin/env python
 # coding: utf-8
 
 # In[1]:
 
 
->>>>>>> ff0c611d545768893ff57407f76f2f9d53b8c0e6
 from dotenv import load_dotenv
 import os
 import asyncio
@@ -18,20 +15,6 @@ from slack_bolt.adapter.socket_mode.async_handler import AsyncSocketModeHandler
 
 import domolibrary.client.DomoAuth as dmda
 
-<<<<<<< HEAD
-import domo_routes
-
-load_dotenv()
-
-WORKGROUP_PREFIX = "DUG"
-SLACK_BOT_TOKEN = os.environ[f"{WORKGROUP_PREFIX}_SLACK_BOT_TOKEN"]
-
-print(SLACK_BOT_TOKEN)
-SLACK_APP_TOKEN = os.environ[f"{WORKGROUP_PREFIX}_SLACK_APP_TOKEN"]
-SLACK_SIGNING_SECRET = os.environ[f"{WORKGROUP_PREFIX}_SLACK_SIGNING_SECRET"]
-
-
-=======
 import agent_mafia.routes.domo as domo_routes
 
 
@@ -53,24 +36,19 @@ SLACK_BOT_TOKEN = os.environ[f"{WORKGROUP_PREFIX}SLACK_BOT_TOKEN"]
 SLACK_APP_TOKEN = os.environ[f"{WORKGROUP_PREFIX}SLACK_APP_TOKEN"]
 SLACK_SIGNING_SECRET = os.environ[f"{WORKGROUP_PREFIX}SLACK_SIGNING_SECRET"]
 
-#for testing
+# for testing
 # SLACK_CHANNEL_ID='C08HR2Z1GMU'
-# SLACK_MESSAGE_ID='1742237263.728579' 
+# SLACK_MESSAGE_ID='1742237263.728579'
 # USER_ID='U08HR2YS0S2'
 
->>>>>>> ff0c611d545768893ff57407f76f2f9d53b8c0e6
 async_slack_app = AsyncSlackApp(
     token=SLACK_BOT_TOKEN,
     signing_secret=SLACK_SIGNING_SECRET,
 )
 
-<<<<<<< HEAD
-load_dotenv()
-=======
 
 # In[4]:
 
->>>>>>> ff0c611d545768893ff57407f76f2f9d53b8c0e6
 
 domo_auth = dmda.DomoTokenAuth(
     domo_access_token=os.environ["DOMO_ACCESS_TOKEN"],
@@ -78,12 +56,9 @@ domo_auth = dmda.DomoTokenAuth(
 )
 
 
-<<<<<<< HEAD
-=======
 # In[5]:
 
 
->>>>>>> ff0c611d545768893ff57407f76f2f9d53b8c0e6
 async def trigger_domo_llms_workflow(
     question,
     channel_id,
@@ -114,10 +89,6 @@ async def trigger_domo_llms_workflow(
     )
 
 
-<<<<<<< HEAD
-@async_slack_app.event("app_mention")  # Listen for app mentions
-async def handle_app_mention(event, say):
-=======
 # In[6]:
 
 
@@ -133,8 +104,7 @@ async def handle_app_mention(event, say):
 
 
 @async_slack_app.event("app_mention")  # Listen for app mentions
-async def handle_app_mention(event, say, debug_api:bool = False):
->>>>>>> ff0c611d545768893ff57407f76f2f9d53b8c0e6
+async def handle_app_mention(event, say, debug_api: bool = False):
     """Handles app mentions and responds with a random yes/no."""
 
     print(event.keys())
@@ -156,12 +126,6 @@ async def handle_app_mention(event, say, debug_api:bool = False):
         channel_id=channel_id,
         message_id=said["ts"],
         user_id=user_id,
-<<<<<<< HEAD
-        debug_api=True,
-    )
-
-
-=======
         debug_api=debug_api,
     )
 
@@ -169,7 +133,6 @@ async def handle_app_mention(event, say, debug_api:bool = False):
 # In[8]:
 
 
->>>>>>> ff0c611d545768893ff57407f76f2f9d53b8c0e6
 async def main():
     handler = AsyncSocketModeHandler(async_slack_app, SLACK_APP_TOKEN)
     await handler.start_async()
@@ -177,13 +140,6 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-<<<<<<< HEAD
-=======
 
 
 # In[ ]:
-
-
-
-
->>>>>>> ff0c611d545768893ff57407f76f2f9d53b8c0e6
