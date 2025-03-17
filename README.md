@@ -11,4 +11,7 @@
 
 4. Also verify that your bot has been:
    - Added to the channel you're testing in
-   - Given the necessary OAuth scopes: chat:write, app_mentions:read, channels:history
+   - Given the necessary OAuth scopes:
+      - chat:write
+      - app_mentions:read
+      - channels:history

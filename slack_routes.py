@@ -1,16 +1,11 @@
 from dotenv import load_dotenv
 import os
-import asyncio
+import re
 
 from typing import Callable
-
 from slack_bolt.async_app import AsyncApp as AsyncSlackApp
 
-
-app = AsyncSlackApp(
-    token=os.environ["SLACK_BOT_TOKEN"],
-    signing_secret=os.environ.get("SLACK_SIGNING_SECRET"),
-)
+load_dotenv()
 
 
 async def reply_to_message(body, say, get_response_fn: Callable):
@@ -66,3 +61,19 @@ async def post_initial_message(channel_id, initial_text, app: AsyncSlackApp):
     except Exception as e:
         print(f"Error posting initial message: {e}")
         return None
+
+
+def remove_slack_user_mentions(text):
+    """
+    Removes Slack user mentions (e.g., <@U08HGSAP9K9>) from a text string.
+
+    Args:
+        text (str): The input text containing potential Slack user mentions.
+
+    Returns:
+        str: The text with Slack user mentions removed.
+    """
+    pattern = r"<@U[A-Z0-9]+>"
+
+    cleaned_text = re.sub(pattern, "", text)
+    return cleaned_text
