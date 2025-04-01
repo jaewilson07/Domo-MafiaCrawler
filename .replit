@@ -8,7 +8,7 @@ deploymentTarget = "autoscale"
 run = ["gunicorn", "--bind", "0.0.0.0:5000", "main:app"]
 
 [workflows]
-runButton = "Project"
+runButton = "Run program"
 
 [[workflows.workflow]]
 name = "Project"
@@ -51,6 +51,15 @@ task = "packager.installForAll"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "python routes/crawler.py --help"
+
+[[workflows.workflow]]
+name = "Run program"
+author = 40001166
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python program.py"
 
 [[ports]]
 localPort = 5000
