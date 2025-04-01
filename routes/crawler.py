@@ -1,21 +1,17 @@
-
 from crawl4ai import AsyncWebCrawler, BrowserConfig, CrawlerRunConfig, CacheMode
-from crawl4ai.deep_crawling import BFSDeepCrawlStrategy
-from crawl4ai.deep_crawling.filters import FilterChain, DomainFilter
-from ..client.ResponseGetData import ResponseGetDataCrawler
+from client.ResponseGetData import ResponseGetDataCrawler
 
 import os
 from typing import Callable
-from agent_mafia.client import MafiaError as amme
-from agent_mafia.utils import convert as amcv
-
+from client import MafiaError as amme
 
 
 class Crawler_Route_NotSuccess(amme.MafiaError):
-    def __init__(self, message = None, exception = None):
-        super().__init__(message = message, exception = exception)
 
-# %% ../../nbs/routes/crawler.ipynb 7
+    def __init__(self, message=None, exception=None):
+        super().__init__(message=message, exception=exception)
+
+
 async def scrape_url(
     url: str,
     session_id: str,
@@ -24,17 +20,21 @@ async def scrape_url(
     storage_fn: Callable = None,
 ):
 
-    browser_config = browser_config or default_browser_config
-
     res = None
-    content = None
+
+    browser_config = browser_config = BrowserConfig(
+        browser_type="chromium",
+        headless=True,
+        verbose=True,
+        extra_args=[
+            "--disable-gpu", "--disable-dev-shm-usage", "--no-sandbox"
+        ],
+    )
 
     try:
         async with AsyncWebCrawler(config=browser_config) as crawler:
             crawler_config = crawler_config or CrawlerRunConfig(
-                cache_mode=CacheMode.BYPASS,
-
-            )
+                cache_mode=CacheMode.BYPASS, )
 
             res = await crawler.arun(
                 url=url,
@@ -42,24 +42,19 @@ async def scrape_url(
                 session_id=session_id,
                 timeout=15,
             )
-
-            print(res)
-
     except NotImplementedError as e:
         raise Crawler_Route_NotSuccess(
-            message="have you run create4ai-create and create4ai-doctor? in terminal",
+            message=
+            "have you run create4ai-create and create4ai-doctor? in terminal",
             exception=e,
         )
 
     except Exception as e:
-        raise Crawler_Route_NotSuccess(
-            exception=e,
-        ) from e
+        raise Crawler_Route_NotSuccess(exception=e, ) from e
 
     if not res.success:
         raise Crawler_Route_NotSuccess(
-            message=f"error crawling {url} - {res.error_message}"
-        )
+            message=f"error crawling {url} - {res.error_message}")
 
     rgd = ResponseGetDataCrawler.from_res(res)
 
@@ -69,12 +64,11 @@ async def scrape_url(
                 "content": rgd.markdown or rgd.response,
                 "source": session_id,
                 "url": res.url,
-            }
-        )
+            })
 
     return rgd
 
-# %% ../../nbs/routes/crawler.ipynb 10
+
 async def crawl_urls(
     starting_url: str,
     session_id: str,
@@ -91,24 +85,19 @@ async def crawl_urls(
         results = []
         async with AsyncWebCrawler(config=browser_config) as crawler:
             async for res in await crawler.arun(
-                starting_url,
-                config=crawler_config,
-                # timeout=15,
-                magic = True,
-                delay_before_return_html=delay_before_return_html,
-                session_id=session_id,
+                    starting_url,
+                    config=crawler_config,
+                    # timeout=15,
+                    magic=True,
+                    delay_before_return_html=delay_before_return_html,
+                    session_id=session_id,
             ):
 
                 rgd = ResponseGetDataCrawler.from_res(res)
 
-                output_path=f"{os.path.join(
-                    output_folder, amcv.convert_url_file_name(rgd.url))}.md"
-
-                print(output_path)
-
                 if storage_fn:
                     storage_fn(
-                        output_path = output_path,
+                        url=rgd.url,
                         data={
                             "content": rgd.markdown or rgd.response,
                             "source": session_id,
@@ -117,11 +106,9 @@ async def crawl_urls(
                     )
 
                 if process_fn:
-                    await process_fn(
-                            rgd=rgd,
-                            export_folder=output_folder,
-                            source=session_id
-                        )
+                    await process_fn(rgd=rgd,
+                                     export_folder=output_folder,
+                                     source=session_id)
 
                 results.append(rgd)
 
@@ -129,11 +116,10 @@ async def crawl_urls(
 
     except NotImplementedError as e:
         raise Crawler_Route_NotSuccess(
-            message="have you run create4ai-create and create4ai-doctor? in terminal",
+            message=
+            "have you run create4ai-create and create4ai-doctor? in terminal",
             exception=e,
         )
 
     except Exception as e:
-        raise Crawler_Route_NotSuccess(
-            exception=e,
-        ) from e
+        raise Crawler_Route_NotSuccess(exception=e, ) from e
