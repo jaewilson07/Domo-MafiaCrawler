@@ -1,36 +1,38 @@
 
-{pkgs}: {
+{ pkgs }: {
   deps = [
+    pkgs.nodejs-20
+    pkgs.python311
     pkgs.alsa-lib
     pkgs.at-spi2-atk
     pkgs.at-spi2-core
     pkgs.atk
-    pkgs.atkBridge
     pkgs.cairo
-    pkgs.chromium
     pkgs.cups
     pkgs.dbus
     pkgs.expat
-    pkgs.firefox
     pkgs.gbm
-    pkgs.kbcommon
-    pkgs.libXcomposite
-    pkgs.libXdamage
-    pkgs.libXfixes
-    pkgs.libnss
-    pkgs.libudev
+    pkgs.gtk3
+    pkgs.libdrm
+    pkgs.libudev-zero
+    pkgs.libxkbcommon
+    pkgs.mesa
     pkgs.nspr
     pkgs.nss
-    pkgs.openssl
     pkgs.pango
-    pkgs.playwright-driver.browsers
-    pkgs.postgresql
-    pkgs.smime
-    pkgs.udev
+    pkgs.systemd
+    pkgs.xorg.libX11
     pkgs.xorg.libXcomposite
     pkgs.xorg.libXdamage
+    pkgs.xorg.libXext
     pkgs.xorg.libXfixes
+    pkgs.xorg.libXrandr
     pkgs.xorg.libxcb
+    # Extra dependencies for web crawling
+    pkgs.chromium
+    pkgs.firefox
+    pkgs.playwright-driver.browsers
+    pkgs.postgresql
     pkgs.xvfb-run
   ];
 }
