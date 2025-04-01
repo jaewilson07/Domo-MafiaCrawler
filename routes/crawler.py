@@ -13,6 +13,8 @@ import logging
 from typing import Callable, List, Optional, Any, Union
 
 from crawl4ai import AsyncWebCrawler, BrowserConfig, CrawlerRunConfig, CacheMode
+from crawl4ai.deep_crawling import BFSDeepCrawlStrategy
+from crawl4ai.deep_crawling.filters import FilterChain, DomainFilter
 
 from client.ResponseGetData import ResponseGetDataCrawler
 from client.MafiaError import MafiaError
@@ -98,7 +100,7 @@ async def scrape_url(url: str,
     logger.info(f"Scraping URL: {url} with session ID: {session_id}")
 
     # Check if crawl4ai is available before attempting to use it
-    
+
     try:
         # Create a new crawler instance using the context manager pattern
         # This ensures proper cleanup of browser resources after crawling

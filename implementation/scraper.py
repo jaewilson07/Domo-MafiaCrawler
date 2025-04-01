@@ -10,7 +10,7 @@ from routes import openai as openai_routes
 from routes import crawler as crawler_routes
 from routes import supabase as supabase_routes
 
-from Crawler import Crawler_ProcessedChunk, CrawlerDependencies
+from implementation.Crawler import Crawler_ProcessedChunk, CrawlerDependencies
 # Standard library imports
 import os
 import logging

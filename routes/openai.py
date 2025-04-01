@@ -26,12 +26,9 @@ from typing import Union, Dict, List, Literal
 
 # Third-party imports
 from openai import AsyncClient as AsyncOpenaiClient
-from openai import ChatMessage, SystemMessage
 
 # Local application imports
 from client.ResponseGetData import ResponseGetDataOpenAi
-
-import routes.openai_routes as openai_routes
 
 
 def generate_openai_client(api_key: str,
@@ -84,35 +81,9 @@ def generate_openai_client(api_key: str,
 class ChatMessage:
     """
     Data class representing a message in a chat conversation.
-    
-    This class defines the structure for messages exchanged between users and AI models.
-    It provides a standardized format that can be easily converted to the JSON format
-    expected by OpenAI's API.
-    
-    Attributes:
-        role (Literal["user", "model"]): The sender of the message, either "user" or "model"
-        content (str): The actual text content of the message
-        timestamp (str, optional): ISO format timestamp indicating when the message was created
-        
-    Methods:
-        to_json(): Converts the message to a dictionary suitable for JSON serialization
-        
-    Example:
-        ```python
-        # Create a user message
-        user_msg = ChatMessage(role="user", content="Hello, AI!")
-        
-        # Create a model response with timestamp
-        import datetime
-        now = datetime.datetime.now().isoformat()
-        model_msg = ChatMessage(role="model", content="Hello, human!", timestamp=now)
-        
-        # Convert to JSON for API calls
-        messages = [user_msg.to_json(), model_msg.to_json()]
-        ```
     """
 
-    role: Literal["user", "model"]
+    role: Literal["user", "model", "system", "ai"]
     content: str
     timestamp: str = None
 
@@ -217,7 +188,7 @@ async def generate_openai_chat(
 
 async def generate_openai_embedding(
     text: str,
-    async_client: openai_routes.AsyncOpenClient,
+    async_client: AsyncOpenaiClient,
     model: str = "text-embedding-3-small",
     return_raw: bool = False,
     debug_prn: bool = False,
