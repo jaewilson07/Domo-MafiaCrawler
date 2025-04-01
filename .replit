@@ -50,7 +50,7 @@ task = "packager.installForAll"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "python crawler.py --help"
+args = "python routes/crawler.py --help"
 
 [[ports]]
 localPort = 5000

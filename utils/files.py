@@ -6,6 +6,43 @@ creating directories, reading/writing files, and handling file formats.
 
 The module focuses on robust error handling and consistent file operations 
 to minimize errors when manipulating files and directories.
+
+Core Functions:
+- upsert_folder: Create or update a directory, optionally replacing existing folders
+- read_md_from_disk: Read a markdown file with frontmatter support
+- save_to_disk: Save data to disk with intelligent handling of different data types
+- get_file_extension: Extract file extension from a path
+- change_file_extension: Get a new file path with a changed extension
+
+Error Handling:
+All functions in this module use consistent error handling via the FileError class,
+which provides detailed error messages including the file path and original exception.
+
+Usage Examples:
+```python
+# Create a directory safely
+try:
+    folder_path = upsert_folder("./output/data")
+    print(f"Directory created at: {folder_path}")
+except FileError as e:
+    print(f"Error: {str(e)}")
+
+# Save data to disk with automatic format detection
+data = {"title": "Example", "content": "This is example content"}
+try:
+    bytes_written = save_to_disk("./output/example.json", data)
+    print(f"Saved {bytes_written} bytes to disk")
+except FileError as e:
+    print(f"Error saving data: {str(e)}")
+
+# Read a markdown file with frontmatter
+try:
+    content, metadata = read_md_from_disk("./docs/example.md")
+    print(f"Title: {metadata.get('title', 'Untitled')}")
+    print(f"Content length: {len(content)} characters")
+except FileError as e:
+    print(f"Error reading file: {str(e)}")
+```
 """
 
 import os
@@ -14,30 +51,94 @@ import shutil
 import logging
 from typing import Any, Dict, Tuple, Union, Optional
 
+# Configure logging at module level
+logger = logging.getLogger(__name__)
+
 # Try to import frontmatter safely
 # This allows the module to be imported even if frontmatter is not installed
 try:
+    # python-frontmatter package provides tools for working with YAML frontmatter in text files
     from frontmatter import Frontmatter
     FRONTMATTER_AVAILABLE = True
 except ImportError:
-    # Create a simple placeholder if frontmatter is not available
+    # Create a robust placeholder if frontmatter is not available
     class MockFrontmatter:
+        """
+        Fallback implementation when python-frontmatter package is not available.
+        
+        This class provides a minimal implementation of the frontmatter reader
+        to ensure graceful degradation when the package is not installed.
+        
+        Note:
+            For full frontmatter functionality, install python-frontmatter:
+            pip install python-frontmatter
+        """
         @staticmethod
         def read_file(file_path):
-            """Simple frontmatter reader that returns empty data if not available."""
+            """
+            Read a file and return content without parsing frontmatter.
+            
+            This is a simplified version that doesn't actually parse frontmatter
+            but returns the whole file as the body with empty attributes.
+            
+            Args:
+                file_path: Path to the file to read
+                
+            Returns:
+                Dict with 'body' containing file content and empty 'attributes'
+            """
             try:
                 with open(file_path, 'r', encoding='utf-8') as f:
                     content = f.read()
+                    
+                # Basic check for frontmatter delimiters
+                if content.startswith('---'):
+                    logger.warning(
+                        f"File {file_path} appears to contain frontmatter, but python-frontmatter "
+                        "package is not installed. Frontmatter will not be parsed correctly."
+                    )
+                    
                 return {"body": content, "attributes": {}}
             except Exception as e:
-                logging.error(f"Error reading file {file_path}: {str(e)}")
+                logger.error(f"Error reading file {file_path}: {str(e)}")
                 return {"body": "", "attributes": {}}
+            
+        def dumps(self, data):
+            """
+            Mock method for serializing frontmatter.
+            
+            Args:
+                data: A dict with 'content' and 'metadata' keys
+                
+            Returns:
+                String with frontmatter format
+            """
+            logger.warning("python-frontmatter not installed, formatting may be incomplete")
+            metadata = data.get('metadata', {})
+            content = data.get('content', '')
+            
+            if not metadata:
+                return content
+                
+            # Basic frontmatter formatting
+            try:
+                import yaml
+                yaml_str = yaml.dump(metadata, default_flow_style=False)
+                return f"---\n{yaml_str}---\n\n{content}"
+            except ImportError:
+                # Even more basic fallback if yaml is not available
+                meta_str = "\n".join([f"{k}: {v}" for k, v in metadata.items()])
+                return f"---\n{meta_str}\n---\n\n{content}"
     
+    # Use the mock implementation
     Frontmatter = MockFrontmatter()
     FRONTMATTER_AVAILABLE = False
+    logger.warning(
+        "python-frontmatter package not installed. Install with: pip install python-frontmatter"
+    )
 
-# Configure logging
-logger = logging.getLogger(__name__)
+# This logger has already been defined at the top of the module
+# No need to redefine it here
 
 
 class FileError(Exception):
@@ -146,11 +247,23 @@ def get_file_extension(path: str) -> str:
     """
     Get the extension of a file path.
     
+    This function extracts the file extension from a path, including the
+    dot separator. If the file has no extension, an empty string is returned.
+    
     Args:
-        path (str): File path
+        path (str): File path to extract extension from
         
     Returns:
-        str: File extension with dot (e.g., '.json')
+        str: File extension with dot (e.g., '.json', '.txt', '.md')
+            or empty string if no extension exists
+            
+    Examples:
+        >>> get_file_extension('data/file.json')
+        '.json'
+        >>> get_file_extension('file.tar.gz')
+        '.gz'
+        >>> get_file_extension('README')
+        ''
     """
     _, extension = os.path.splitext(path)
     return extension
@@ -159,14 +272,28 @@ def get_file_extension(path: str) -> str:
 def change_file_extension(file_path: str, extension: str) -> str:
     """
     Returns a new file path with the changed extension.
-    Unlike the original version, this doesn't rename the file, it just returns the new path.
+    
+    This function creates a new file path by replacing the extension
+    of the original path. It does not rename the file on disk but
+    returns a new path string. The function handles paths with or
+    without an existing extension.
     
     Args:
-        file_path (str): The path to the file.
-        extension (str): The new extension (with or without dot).
+        file_path (str): The path to the file
+        extension (str): The new extension (with or without dot)
         
     Returns:
-        str: New file path with the changed extension.
+        str: New file path with the changed extension
+        
+    Examples:
+        >>> change_file_extension('data/file.txt', '.json')
+        'data/file.json'
+        >>> change_file_extension('data/file.txt', 'json')
+        'data/file.json'
+        >>> change_file_extension('README', '.md')
+        'README.md'
+        >>> change_file_extension('archive.tar.gz', '.zip')
+        'archive.tar.zip'
     """
     # Ensure extension starts with dot
     if not extension.startswith('.'):
@@ -189,18 +316,45 @@ def save_to_disk(
     """
     Saves data to disk with intelligent handling of different data types.
     
+    This versatile function automatically detects the data type and saves it
+    in the appropriate format. It handles dictionaries (saved as JSON),
+    binary data, and text data with specialized processing for each type.
+    
+    Features:
+    - Automatic detection of data types and appropriate handling
+    - Directory creation if needed
+    - Proper encoding and formatting of data
+    - Consistent error handling with detailed error messages
+    - JSON auto-formatting for dictionary data
+    
     Args:
-        output_path (str): Path where the file should be saved.
-        data (Any): The data to save (string, bytes, dict, etc.).
-        is_binary (bool, optional): Force binary mode writing.
-        encoding (str, optional): Character encoding for text files.
-        replace_folder (bool, optional): Replace existing folder if True.
+        output_path (str): Path where the file should be saved
+        data (Any): The data to save (string, bytes, dict, list, etc.)
+        is_binary (bool, optional): Force binary mode writing even for text data
+        encoding (str, optional): Character encoding for text files
+        replace_folder (bool, optional): Replace existing folder if True
         
     Returns:
-        int: Number of bytes written
+        int: Number of bytes written to the file
         
     Raises:
-        FileError: If there's an error saving the file
+        FileError: If there's an error during any part of the save process
+        
+    Examples:
+        >>> # Save a dictionary as JSON
+        >>> data = {"name": "Example", "values": [1, 2, 3]}
+        >>> save_to_disk("output/config.json", data)
+        
+        >>> # Save text content
+        >>> text = "Hello, world!"
+        >>> save_to_disk("output/hello.txt", text)
+        
+        >>> # Save binary data
+        >>> binary_data = b"\\x00\\x01\\x02\\x03"
+        >>> save_to_disk("output/data.bin", binary_data)
+        
+        >>> # Force binary mode for text
+        >>> save_to_disk("output/encoded.bin", "Special text", is_binary=True)
     """
     try:
         # Ensure directory exists
