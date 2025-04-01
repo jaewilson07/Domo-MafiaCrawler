@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error - Web Crawler Tool</title>
+    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
+</head>
+<body class="bg-dark text-light">
+    <header class="py-4 bg-secondary">
+        <div class="container">
+            <h1>Error</h1>
+        </div>
+    </header>
+    
+    <nav class="navbar navbar-expand navbar-dark bg-dark mb-4">
+        <div class="container">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('index') }}">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('crawler') }}">Crawler Status</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('about') }}">About</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div class="card bg-secondary">
+            <div class="card-body">
+                <div class="alert alert-danger">
+                    <h2>An Error Occurred</h2>
+                    <p>{{ error }}</p>
+                </div>
+                
+                <a href="{{ url_for('index') }}" class="btn btn-primary">Return to Home</a>
+            </div>
+        </div>
+    </div>
+    
+    <footer class="text-center py-3 mt-4 bg-secondary">
+        <div class="container">
+            <p>&copy; 2025 Web Crawler Tool</p>
+        </div>
+    </footer>
+</body>
+</html>

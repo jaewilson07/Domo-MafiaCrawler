@@ -5,6 +5,7 @@ This module handles the initialization of browser configurations
 and database connections used by the crawler.
 """
 
+# Standard library imports
 import os
 import logging
 from typing import Optional
@@ -12,8 +13,9 @@ from typing import Optional
 # Configure logging
 logger = logging.getLogger(__name__)
 
-# Try to import the necessary modules, but handle import errors gracefully
+# Try to import third-party dependencies, but handle import errors gracefully
 try:
+    # Third-party imports
     from crawl4ai import BrowserConfig
     CRAWL4AI_AVAILABLE = True
 except ImportError:
@@ -33,6 +35,7 @@ except ImportError:
     logger.warning("crawl4ai module is not installed. Browser functionality will be limited.")
 
 try:
+    # Third-party imports
     from supabase import AsyncClient as Async_SupabaseClient
     SUPABASE_AVAILABLE = True
 except ImportError:

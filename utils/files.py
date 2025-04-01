@@ -45,6 +45,7 @@ except FileError as e:
 ```
 """
 
+# Standard library imports
 import os
 import json
 import shutil
@@ -54,13 +55,15 @@ from typing import Any, Dict, Tuple, Union, Optional
 # Configure logging at module level
 logger = logging.getLogger(__name__)
 
-# Try to import frontmatter safely
+# Try to import third-party dependencies safely
 # This allows the module to be imported even if frontmatter is not installed
 try:
+    # Third-party imports
     # python-frontmatter package provides tools for working with YAML frontmatter in text files
-    from frontmatter import Frontmatter
+    import frontmatter
     FRONTMATTER_AVAILABLE = True
 except ImportError:
+    FRONTMATTER_AVAILABLE = False
     # Create a robust placeholder if frontmatter is not available
     class MockFrontmatter:
         """
@@ -132,10 +135,6 @@ except ImportError:
     
     # Use the mock implementation
     Frontmatter = MockFrontmatter()
-    FRONTMATTER_AVAILABLE = False
-    logger.warning(
-        "python-frontmatter package not installed. Install with: pip install python-frontmatter"
-    )
 
 # This logger has already been defined at the top of the module
 # No need to redefine it here
@@ -227,7 +226,10 @@ def read_md_from_disk(file_path: str) -> Tuple[str, Dict[str, Any]]:
             raise FileError(f"File does not exist", path=file_path)
             
         # Read file with frontmatter
-        data = Frontmatter.read_file(file_path)
+        if FRONTMATTER_AVAILABLE:
+            data = frontmatter.parse(file_path)
+        else:
+            data = Frontmatter.read_file(file_path)
         
         # Ensure body and attributes are present
         body = data.get("body", "")
@@ -304,6 +306,393 @@ def change_file_extension(file_path: str, extension: str) -> str:
     new_file_path = base_name + extension
     
     return new_file_path
+
+
+def ensure_template_files_exist():
+    """
+    Creates the necessary template files for the web application if they don't exist.
+    This ensures the Flask app can run without errors even on the first execution.
+    
+    Creates:
+        - index.html: Home page with crawler form
+        - crawler.html: Crawler status page
+        - about.html: About page
+        - error.html: Error display page
+    """
+    templates_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "templates")
+    static_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static")
+    
+    # Ensure directories exist
+    os.makedirs(templates_dir, exist_ok=True)
+    os.makedirs(static_dir, exist_ok=True)
+    
+    # Create CSS file in static directory
+    css_path = os.path.join(static_dir, "style.css")
+    if not os.path.exists(css_path):
+        with open(css_path, "w", encoding="utf-8") as f:
+            f.write("""
+/* Basic styling for the crawler app */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    margin: 0;
+    padding: 0;
+    background-color: #f8f9fa;
+}
+
+.container {
+    width: 80%;
+    margin: auto;
+    overflow: hidden;
+    padding: 20px;
+}
+
+header {
+    background: #343a40;
+    color: #fff;
+    padding: 20px 0;
+    margin-bottom: 30px;
+}
+
+header h1 {
+    margin: 0;
+    padding-left: 20px;
+}
+
+nav {
+    background: #495057;
+    color: #fff;
+    padding: 10px 0;
+}
+
+nav ul {
+    padding: 0;
+    list-style: none;
+    display: flex;
+}
+
+nav li {
+    padding: 0 20px;
+}
+
+nav a {
+    color: #fff;
+    text-decoration: none;
+}
+
+nav a:hover {
+    color: #ccc;
+}
+
+.main-content {
+    background: #fff;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+form {
+    margin-bottom: 20px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+input[type="text"], 
+input[type="url"], 
+textarea {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+button {
+    display: inline-block;
+    background: #343a40;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #495057;
+}
+
+.alert {
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.alert-error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.footer {
+    background: #343a40;
+    color: #fff;
+    text-align: center;
+    padding: 10px;
+    margin-top: 30px;
+}
+            """)
+    
+    # Create index.html template
+    index_path = os.path.join(templates_dir, "index.html")
+    if not os.path.exists(index_path):
+        with open(index_path, "w", encoding="utf-8") as f:
+            f.write("""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Crawler Tool</title>
+    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Web Crawler Tool</h1>
+        </div>
+    </header>
+    
+    <nav>
+        <div class="container">
+            <ul>
+                <li><a href="{{ url_for('index') }}">Home</a></li>
+                <li><a href="{{ url_for('crawler') }}">Crawler Status</a></li>
+                <li><a href="{{ url_for('about') }}">About</a></li>
+            </ul>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div class="main-content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <h2>Start a New Crawl</h2>
+            <form action="{{ url_for('crawler') }}" method="post">
+                <div class="form-group">
+                    <label for="url">URL to Crawl:</label>
+                    <input type="url" id="url" name="url" required 
+                           placeholder="https://example.com">
+                </div>
+                
+                <div class="form-group">
+                    <label for="session_id">Session ID (optional):</label>
+                    <input type="text" id="session_id" name="session_id" 
+                           placeholder="custom_session_1">
+                </div>
+                
+                <button type="submit">Start Crawling</button>
+            </form>
+        </div>
+    </div>
+    
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 Web Crawler Tool</p>
+        </div>
+    </footer>
+</body>
+</html>""")
+    
+    # Create crawler.html template
+    crawler_path = os.path.join(templates_dir, "crawler.html")
+    if not os.path.exists(crawler_path):
+        with open(crawler_path, "w", encoding="utf-8") as f:
+            f.write("""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crawler Status</title>
+    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Crawler Status</h1>
+        </div>
+    </header>
+    
+    <nav>
+        <div class="container">
+            <ul>
+                <li><a href="{{ url_for('index') }}">Home</a></li>
+                <li><a href="{{ url_for('crawler') }}">Crawler Status</a></li>
+                <li><a href="{{ url_for('about') }}">About</a></li>
+            </ul>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div class="main-content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <h2>Recent Crawl Jobs</h2>
+            
+            <div class="job-list">
+                <p>No recent crawl jobs available.</p>
+            </div>
+            
+            <p><a href="{{ url_for('index') }}">Start a new crawl</a></p>
+        </div>
+    </div>
+    
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 Web Crawler Tool</p>
+        </div>
+    </footer>
+</body>
+</html>""")
+    
+    # Create about.html template
+    about_path = os.path.join(templates_dir, "about.html")
+    if not os.path.exists(about_path):
+        with open(about_path, "w", encoding="utf-8") as f:
+            f.write("""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Web Crawler</title>
+    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>About Web Crawler Tool</h1>
+        </div>
+    </header>
+    
+    <nav>
+        <div class="container">
+            <ul>
+                <li><a href="{{ url_for('index') }}">Home</a></li>
+                <li><a href="{{ url_for('crawler') }}">Crawler Status</a></li>
+                <li><a href="{{ url_for('about') }}">About</a></li>
+            </ul>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div class="main-content">
+            <h2>Web Crawler Tool</h2>
+            
+            <p>This web crawler tool allows you to extract content from websites for analysis and data extraction.</p>
+            
+            <h3>Features:</h3>
+            <ul>
+                <li>Simple web interface for configuring crawl operations</li>
+                <li>Extracts text content in a format readable by humans and AI</li>
+                <li>Supports advanced crawling options</li>
+                <li>RESTful API for integration with other applications</li>
+            </ul>
+            
+            <h3>Technologies:</h3>
+            <ul>
+                <li>Flask: Web framework</li>
+                <li>Trafilatura: Content extraction</li>
+                <li>BeautifulSoup: HTML parsing</li>
+                <li>Requests: HTTP handling</li>
+            </ul>
+        </div>
+    </div>
+    
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 Web Crawler Tool</p>
+        </div>
+    </footer>
+</body>
+</html>""")
+    
+    # Create error.html template
+    error_path = os.path.join(templates_dir, "error.html")
+    if not os.path.exists(error_path):
+        with open(error_path, "w", encoding="utf-8") as f:
+            f.write("""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error</title>
+    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Error</h1>
+        </div>
+    </header>
+    
+    <nav>
+        <div class="container">
+            <ul>
+                <li><a href="{{ url_for('index') }}">Home</a></li>
+                <li><a href="{{ url_for('crawler') }}">Crawler Status</a></li>
+                <li><a href="{{ url_for('about') }}">About</a></li>
+            </ul>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div class="main-content">
+            <div class="alert alert-error">
+                <h2>An Error Occurred</h2>
+                <p>{{ error }}</p>
+            </div>
+            
+            <p><a href="{{ url_for('index') }}">Return to home page</a></p>
+        </div>
+    </div>
+    
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 Web Crawler Tool</p>
+        </div>
+    </footer>
+</body>
+</html>""")
+    
+    logger.info("Template files created successfully")
 
 
 def save_to_disk(

@@ -55,19 +55,21 @@ operations cannot be completed. This ensures consistent error handling throughou
 the application.
 """
 
+# Standard library imports
 import json
 import logging
 import os
 import datetime as dt
 from typing import List, Dict, Callable, Optional, Any, Union, TypeVar, cast
 
-# Try to import supabase safely
+# Try to import third-party dependencies safely
 try:
-    from supabase import AsyncClient as Async_SupabaseClient
+    # Third-party imports
+    from supabase import AsyncClient as AsyncSupabaseClient
     SUPABASE_AVAILABLE = True
 except ImportError:
     # Create a placeholder for type hints if supabase is not available
-    class Async_SupabaseClient:
+    class AsyncSupabaseClient:
         """
         Placeholder for type hints when supabase is not available.
         
@@ -130,11 +132,11 @@ except ImportError:
     # Mark that Supabase is not available in this environment
     SUPABASE_AVAILABLE = False
 
-# Local imports
+# Local application imports
 from client.MafiaError import MafiaError
 from client.ResponseGetData import ResponseGetDataSupabase
 
-# Try to import local file utilities or use built-in alternatives
+# Try to import local utility modules or use built-in alternatives
 try:
     from utils.files import upsert_folder
     LOCAL_FILES_MODULE = True
@@ -207,7 +209,7 @@ class SupabaseError(MafiaError):
 
 
 async def store_data_in_supabase_table(
-        async_supabase_client: Async_SupabaseClient,
+        async_supabase_client: AsyncSupabaseClient,
         table_name: str,
         data: Dict[str, Any],
         on_conflict: str = "url, chunk_number") -> ResponseGetDataSupabase:
@@ -257,7 +259,7 @@ async def store_data_in_supabase_table(
 
 
 async def get_document_urls_from_supabase(
-        async_supabase_client: Async_SupabaseClient,
+        async_supabase_client: AsyncSupabaseClient,
         source: Optional[str] = None,
         table_name: str = "site_pages") -> List[str]:
     """
@@ -398,7 +400,7 @@ def format_supabase_chunks_into_pages(data: List[Dict[str, Any]]) -> str:
 
 
 async def get_document_from_supabase(
-    async_supabase_client: Async_SupabaseClient,
+    async_supabase_client: AsyncSupabaseClient,
     url: str,
     table_name: str = "site_pages",
     source: Optional[str] = None,
@@ -457,7 +459,7 @@ async def get_document_from_supabase(
 
 
 async def get_chunks_from_supabase(
-    async_supabase_client: Async_SupabaseClient,
+    async_supabase_client: AsyncSupabaseClient,
     query_embedding: List[float],
     table_name: str = "site_pages",
     match_count: int = 5,

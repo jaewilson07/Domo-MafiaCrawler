@@ -8,105 +8,20 @@ The module handles all web crawling operations with proper error handling and
 standardized response formatting via ResponseGetDataCrawler objects.
 """
 
+# Standard library imports
 import logging
 from typing import Callable, List, Optional, Any, Union
 
-# Try to import crawl4ai dependencies safely
-# This allows the module to be imported even if crawl4ai is not installed
-try:
-    from crawl4ai import AsyncWebCrawler, BrowserConfig, CrawlerRunConfig, CacheMode
-    CRAWL4AI_AVAILABLE = True
-except ImportError:
-    # Create placeholder classes if crawl4ai is not available
-    # These placeholders implement the necessary interfaces to pass type checking
-    # but will raise appropriate exceptions when actually used
+from crawl4ai import AsyncWebCrawler, BrowserConfig, CrawlerRunConfig, CacheMode
 
-    class AsyncWebCrawler:
-        """
-        Placeholder AsyncWebCrawler class that implements the async context manager protocol.
-        This allows the code to pass type checking even when crawl4ai is not installed.
-        """
-        def __init__(self, *args, **kwargs):
-            """Initialize placeholder crawler."""
-            self.config = kwargs.get('config', None)
-        
-        async def __aenter__(self):
-            """Async context manager entry."""
-            return self
-            
-        async def __aexit__(self, exc_type, exc_val, exc_tb):
-            """Async context manager exit."""
-            pass
-            
-        # Instead of an async generator, we'll make this a regular async function
-        # that returns a mock async iterator class
-        async def arun(self, *args, **kwargs):
-            """
-            Placeholder for the arun method that returns a mock async iterator.
-            This allows the code to type check correctly without crawl4ai.
-            """
-            class MockCrawlResult:
-                """Mock result object that mimics the crawl4ai result object structure."""
-                def __init__(self):
-                    # Add all the necessary properties that might be accessed
-                    self.success = False
-                    self.error_message = "crawl4ai library is not installed"
-                    self.url = ""
-                    self.html = ""
-                    self.cleaned_html = ""
-                    self.links = []
-                    self.status_code = 503  # Service Unavailable
-            
-            class MockAsyncIterator:
-                """Mock async iterator that satisfies the interface but yields no values."""
-                def __aiter__(self):
-                    return self
-                    
-                async def __anext__(self):
-                    # Immediately stop iteration
-                    raise StopAsyncIteration()
-                    
-            # For scrape_url, return a mock result directly
-            if 'url' in kwargs and len(args) == 0:
-                return MockCrawlResult()
-            
-            # For crawl_urls, return a mock iterator
-            return MockAsyncIterator()
-    
-    class BrowserConfig:
-        """Placeholder BrowserConfig class."""
-        def __init__(self, *args, **kwargs):
-            """Initialize placeholder browser config."""
-            self.browser_type = kwargs.get('browser_type', 'chromium')
-            self.headless = kwargs.get('headless', True)
-            self.verbose = kwargs.get('verbose', False)
-            self.extra_args = kwargs.get('extra_args', [])
-    
-    class CrawlerRunConfig:
-        """Placeholder CrawlerRunConfig class."""
-        def __init__(self, *args, **kwargs):
-            """Initialize placeholder crawler config."""
-            self.cache_mode = kwargs.get('cache_mode', 'bypass')
-            self.max_pages = kwargs.get('max_pages', 10)
-            self.same_domain = kwargs.get('same_domain', True)
-            self.include_regex = kwargs.get('include_regex', None)
-            self.exclude_regex = kwargs.get('exclude_regex', None)
-    
-    class CacheMode:
-        """Placeholder CacheMode class with constants."""
-        BYPASS = "bypass"
-        USE_CACHE = "use_cache"
-        REFRESH_CACHE = "refresh_cache"
-    
-    CRAWL4AI_AVAILABLE = False
 from client.ResponseGetData import ResponseGetDataCrawler
-from client import MafiaError as amme
+from client.MafiaError import MafiaError
 
 # Configure logging
 logger = logging.getLogger(__name__)
 
 
-class CrawlerRouteError(amme.MafiaError):
+class CrawlerRouteError(MafiaError):
     """
     Custom exception for crawler route errors.
     Inherits from MafiaError for consistent error handling.
@@ -115,7 +30,10 @@ class CrawlerRouteError(amme.MafiaError):
         message (str, optional): Error message description
         exception (Exception, optional): Original exception that was caught
     """
-    def __init__(self, message: Optional[str] = None, exception: Optional[Exception] = None):
+
+    def __init__(self,
+                 message: Optional[str] = None,
+                 exception: Optional[Exception] = None):
         super().__init__(message=message, exception=exception)
 
 
@@ -131,9 +49,7 @@ def create_default_browser_config() -> BrowserConfig:
         headless=True,
         verbose=True,
         extra_args=[
-            "--disable-gpu", 
-            "--disable-dev-shm-usage", 
-            "--no-sandbox"
+            "--disable-gpu", "--disable-dev-shm-usage", "--no-sandbox"
         ],
     )
 
@@ -145,22 +61,18 @@ def create_default_crawler_config() -> CrawlerRunConfig:
     Returns:
         CrawlerRunConfig: Configured crawler settings object
     """
-    return CrawlerRunConfig(
-        cache_mode=CacheMode.BYPASS,
-        max_pages=10,
-        same_domain=True
-    )
+    return CrawlerRunConfig(cache_mode=CacheMode.BYPASS,
+                            max_pages=10,
+                            same_domain=True)
 
 
-async def scrape_url(
-    url: str,
-    session_id: str,
-    browser_config: Optional[BrowserConfig] = None,
-    crawler_config: Optional[CrawlerRunConfig] = None,
-    storage_fn: Optional[Callable] = None,
-    process_fn: Optional[Callable] = None,
-    timeout: int = 15
-) -> ResponseGetDataCrawler:
+async def scrape_url(url: str,
+                     session_id: str,
+                     browser_config: Optional[BrowserConfig] = None,
+                     crawler_config: Optional[CrawlerRunConfig] = None,
+                     storage_fn: Optional[Callable] = None,
+                     process_fn: Optional[Callable] = None,
+                     timeout: int = 15) -> ResponseGetDataCrawler:
     """
     Scrapes a single URL and processes the result.
     
@@ -182,15 +94,15 @@ async def scrape_url(
     # Use provided config or create default
     browser_config = browser_config or create_default_browser_config()
     crawler_config = crawler_config or create_default_crawler_config()
-    
+
     logger.info(f"Scraping URL: {url} with session ID: {session_id}")
-    
+
     # Check if crawl4ai is available before attempting to use it
     if not CRAWL4AI_AVAILABLE:
         error_msg = "crawl4ai library is not installed. Please install it with: pip install crawl4ai"
         logger.error(error_msg)
         raise CrawlerRouteError(message=error_msg)
-    
+
     try:
         # Create a new crawler instance using the context manager pattern
         # This ensures proper cleanup of browser resources after crawling
@@ -200,23 +112,25 @@ async def scrape_url(
             res = await crawler.arun(
                 url=url,
                 config=crawler_config,
-                session_id=session_id,  # Session ID for potential caching/resuming
-                timeout=timeout,        # Maximum time to wait for page load
+                session_id=
+                session_id,  # Session ID for potential caching/resuming
+                timeout=timeout,  # Maximum time to wait for page load
             )
-            
+
             # Check if the crawl was successful
             # Different errors can occur: network issues, timeouts, invalid URLs
             if not res.success:
                 error_message = getattr(res, 'error_message', 'Unknown error')
                 logger.error(f"Failed to crawl {url}: {error_message}")
-                raise CrawlerRouteError(message=f"Error crawling {url} - {error_message}")
-            
+                raise CrawlerRouteError(
+                    message=f"Error crawling {url} - {error_message}")
+
             logger.info(f"Successfully crawled {url}")
-            
+
             # Convert raw crawl results to our standardized format
             # This provides a consistent interface regardless of crawler implementation
             rgd = ResponseGetDataCrawler.from_res(res)
-            
+
             # Execute optional callback functions if provided
             # storage_fn: typically saves results to database or filesystem
             if storage_fn:
@@ -226,7 +140,7 @@ async def scrape_url(
                 except Exception as e:
                     # Log storage errors but don't fail the entire operation
                     logger.warning(f"Error in storage callback: {str(e)}")
-            
+
             # process_fn: typically transforms or extracts data from results
             if process_fn:
                 logger.debug(f"Processing results for {url}")
@@ -235,16 +149,16 @@ async def scrape_url(
                 except Exception as e:
                     # Log processing errors but don't fail the entire operation
                     logger.warning(f"Error in process callback: {str(e)}")
-            
+
             # Return the standardized response
             return rgd
-            
+
     except NotImplementedError as e:
         logger.error(f"Crawler implementation error: {str(e)}")
         raise CrawlerRouteError(
-            message="Crawler dependencies not installed correctly. Have you run create4ai-create and create4ai-doctor?",
-            exception=e
-        )
+            message=
+            "Crawler dependencies not installed correctly. Have you run create4ai-create and create4ai-doctor?",
+            exception=e)
     except Exception as e:
         logger.error(f"Unexpected error while crawling {url}: {str(e)}")
         raise CrawlerRouteError(exception=e) from e
@@ -282,47 +196,52 @@ async def crawl_urls(
     # Use provided config or create default
     browser_config = browser_config or create_default_browser_config()
     crawler_config = crawler_config or create_default_crawler_config()
-    
-    logger.info(f"Starting crawl from URL: {starting_url} with session ID: {session_id}")
+
+    logger.info(
+        f"Starting crawl from URL: {starting_url} with session ID: {session_id}"
+    )
     logger.info(f"Output folder: {output_folder}")
-    
+
     # Check if crawl4ai is available before attempting to use it
     if not CRAWL4AI_AVAILABLE:
         error_msg = "crawl4ai library is not installed. Please install it with: pip install crawl4ai"
         logger.error(error_msg)
         raise CrawlerRouteError(message=error_msg)
-    
+
     try:
         # Initialize results list to store all crawled pages
         results = []
-        
+
         # Create a new crawler instance using the context manager pattern
         # This ensures proper cleanup of browser resources after crawling
         async with AsyncWebCrawler(config=browser_config) as crawler:
             logger.debug(f"Initializing multi-page crawl from {starting_url}")
-            
+
             # The crawler.arun() returns an async iterator that yields results as pages are crawled
             # We use "await" here because arun() is an async function that returns an async iterator
             crawl_iterator = await crawler.arun(
                 starting_url,
                 config=crawler_config,
                 magic=True,  # Enable magic mode for automatic content extraction
-                delay_before_return_html=delay_before_return_html,  # Wait time for dynamic content loading
+                delay_before_return_html=
+                delay_before_return_html,  # Wait time for dynamic content loading
                 session_id=session_id,  # For tracking and resuming crawls
             )
-            
+
             # Now we iterate through the results as they come in
             # The "async for" loop will process each result as it becomes available
             page_count = 0
             async for res in crawl_iterator:
                 page_count += 1
                 current_url = getattr(res, 'url', 'unknown')
-                logger.debug(f"Processing crawl result #{page_count} for URL: {current_url}")
-                
+                logger.debug(
+                    f"Processing crawl result #{page_count} for URL: {current_url}"
+                )
+
                 # Convert the raw crawl result to our standardized format
                 # This provides a consistent interface for all downstream processing
                 rgd = ResponseGetDataCrawler.from_res(res)
-                
+
                 # Execute the storage callback if provided
                 # This typically saves results to a database or file system
                 if storage_fn:
@@ -331,8 +250,10 @@ async def crawl_urls(
                         storage_fn(rgd)
                     except Exception as e:
                         # Log storage errors but continue processing
-                        logger.warning(f"Error in storage callback for {rgd.url}: {str(e)}")
-                
+                        logger.warning(
+                            f"Error in storage callback for {rgd.url}: {str(e)}"
+                        )
+
                 # Execute the process callback if provided
                 # This allows for custom processing of each crawled page
                 if process_fn:
@@ -342,25 +263,28 @@ async def crawl_urls(
                         await process_fn(rgd=rgd)
                     except Exception as e:
                         # Log processing errors but continue crawling
-                        logger.warning(f"Error in process callback for {rgd.url}: {str(e)}")
-                
+                        logger.warning(
+                            f"Error in process callback for {rgd.url}: {str(e)}"
+                        )
+
                 # Add the result to our collection
                 results.append(rgd)
-                
+
                 # Log progress periodically
                 if page_count % 10 == 0:
                     logger.info(f"Crawled {page_count} pages so far...")
-        
+
         # Log completion summary
-        logger.info(f"Crawl completed successfully with {len(results)} pages crawled")
+        logger.info(
+            f"Crawl completed successfully with {len(results)} pages crawled")
         return results
-        
+
     except NotImplementedError as e:
         logger.error(f"Crawler implementation error: {str(e)}")
         raise CrawlerRouteError(
-            message="Crawler dependencies not installed correctly. Have you run create4ai-create and create4ai-doctor?",
-            exception=e
-        )
+            message=
+            "Crawler dependencies not installed correctly. Have you run create4ai-create and create4ai-doctor?",
+            exception=e)
     except Exception as e:
         logger.error(f"Unexpected error during crawl: {str(e)}")
         raise CrawlerRouteError(exception=e) from e

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Crawler Tool</title>
+    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
+</head>
+<body class="bg-dark text-light">
+    <header class="py-4 bg-secondary">
+        <div class="container">
+            <h1>Web Crawler Tool</h1>
+        </div>
+    </header>
+    
+    <nav class="navbar navbar-expand navbar-dark bg-dark mb-4">
+        <div class="container">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link active" href="{{ url_for('index') }}">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('crawler') }}">Crawler Status</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('about') }}">About</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div class="card bg-secondary">
+            <div class="card-body">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                
+                <h2>Start a New Crawl</h2>
+                <form action="{{ url_for('crawler') }}" method="post">
+                    <div class="mb-3">
+                        <label for="url" class="form-label">URL to Crawl:</label>
+                        <input type="url" class="form-control" id="url" name="url" required 
+                               placeholder="https://example.com">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="session_id" class="form-label">Session ID (optional):</label>
+                        <input type="text" class="form-control" id="session_id" name="session_id" 
+                               placeholder="custom_session_1">
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Start Crawling</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <footer class="text-center py-3 mt-4 bg-secondary">
+        <div class="container">
+            <p>&copy; 2025 Web Crawler Tool</p>
+        </div>
+    </footer>
+</body>
+</html>
