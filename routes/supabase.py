@@ -67,6 +67,105 @@ except ImportError:
             """Initialize a placeholder client that will raise appropriate errors when used."""
             pass
             
+        def from_(self, table_name):
+            """
+            Mock method for table selection in Supabase queries.
+            
+            Args:
+                table_name: Name of the table to query
+                
+            Returns:
+                Self for method chaining
+            """
+            return self
+            
+        def table(self, table_name):
+            """
+            Mock method for table operations in Supabase.
+            
+            Args:
+                table_name: Name of the table for operations
+                
+            Returns:
+                Self for method chaining
+            """
+            return self
+            
+        def select(self, columns):
+            """
+            Mock method for column selection in Supabase queries.
+            
+            Args:
+                columns: Columns to select
+                
+            Returns:
+                Self for method chaining
+            """
+            return self
+            
+        def eq(self, column, value):
+            """
+            Mock method for equality filtering in Supabase queries.
+            
+            Args:
+                column: Column to filter on
+                value: Value to compare with
+                
+            Returns:
+                Self for method chaining
+            """
+            return self
+            
+        def order(self, column):
+            """
+            Mock method for ordering results in Supabase queries.
+            
+            Args:
+                column: Column to order by
+                
+            Returns:
+                Self for method chaining
+            """
+            return self
+            
+        def upsert(self, data, **kwargs):
+            """
+            Mock method for upserting data in Supabase.
+            
+            Args:
+                data: Data to upsert
+                **kwargs: Additional arguments
+                
+            Returns:
+                Self for method chaining
+            """
+            return self
+            
+        def rpc(self, function_name, params=None):
+            """
+            Mock method for RPC calls in Supabase.
+            
+            Args:
+                function_name: Name of the function to call
+                params: Parameters to pass to the function
+                
+            Returns:
+                Self for method chaining
+            """
+            return self
+            
+        async def execute(self):
+            """
+            Mock method for executing Supabase queries.
+            
+            Returns:
+                Mock result object with empty data
+            """
+            class MockResult:
+                data = []
+                
+            return MockResult()
+            
     # Mark that Supabase is not available in this environment
     SUPABASE_AVAILABLE = False
 
