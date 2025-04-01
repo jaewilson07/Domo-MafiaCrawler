@@ -5,20 +5,30 @@ This module provides route handlers for Supabase database operations.
 It includes functions for storing, retrieving, and formatting data from Supabase tables.
 
 The module handles all Supabase database operations with proper error handling and
-standardized response formatting via ResponseGetDataSupabase objects.
+standardized response formatting via ResponseGetDataSupabase objects. It's designed
+to gracefully handle environments where the Supabase package is not available by
+providing proper type hints and clear error messages.
 
-Core Functions:
+## Core Functions:
 - store_data_in_supabase_table: Store data in a Supabase table
 - get_document_urls_from_supabase: Get all document URLs from a table
 - get_document_from_supabase: Retrieve a document by URL
 - get_chunks_from_supabase: Perform vector similarity search
 - save_chunk_to_disk: Save a data chunk as a markdown file with frontmatter
 
-Formatting Functions:
+## Formatting Functions:
 - format_supabase_chunks: Format chunks as markdown strings
 - format_supabase_chunks_into_pages: Format multiple chunks into a single page
 
-Usage Examples:
+## Type Handling:
+This module uses type hints throughout to improve code completion and error checking.
+Key types include:
+- Async_SupabaseClient: The Supabase client type (real or mock for LSP)
+- Document: Dict representing a document or chunk from Supabase
+- DocumentList: List of Document objects
+- SupabaseError: Custom exception for Supabase-related errors
+
+## Usage Examples:
 ```python
 # Store data example
 await store_data_in_supabase_table(
@@ -37,6 +47,12 @@ doc = await get_document_from_supabase(
 # Save to disk example
 save_chunk_to_disk("output/example.md", document_data)
 ```
+
+## Error Handling:
+All functions in this module check for the availability of the Supabase package
+and raise appropriate SupabaseError exceptions with clear error messages when
+operations cannot be completed. This ensures consistent error handling throughout
+the application.
 """
 
 import json
@@ -62,105 +78,50 @@ except ImportError:
         
         In a production environment, the real Async_SupabaseClient from the
         supabase package should be used instead.
+        
+        Note:
+            These mock methods are only intended for LSP type checking and should not
+            be used in actual code. The SUPABASE_AVAILABLE flag should be checked
+            before attempting to use any Supabase functionality.
         """
         def __init__(self, *args, **kwargs):
             """Initialize a placeholder client that will raise appropriate errors when used."""
-            pass
+            import warnings
+            warnings.warn(
+                "Using mock Supabase client. Install the supabase package for actual functionality.",
+                DeprecationWarning, stacklevel=2
+            )
             
         def from_(self, table_name):
-            """
-            Mock method for table selection in Supabase queries.
-            
-            Args:
-                table_name: Name of the table to query
-                
-            Returns:
-                Self for method chaining
-            """
+            """[MOCK] Method for table selection in Supabase queries."""
             return self
             
         def table(self, table_name):
-            """
-            Mock method for table operations in Supabase.
-            
-            Args:
-                table_name: Name of the table for operations
-                
-            Returns:
-                Self for method chaining
-            """
+            """[MOCK] Method for table operations in Supabase."""
             return self
             
         def select(self, columns):
-            """
-            Mock method for column selection in Supabase queries.
-            
-            Args:
-                columns: Columns to select
-                
-            Returns:
-                Self for method chaining
-            """
+            """[MOCK] Method for column selection in Supabase queries."""
             return self
             
         def eq(self, column, value):
-            """
-            Mock method for equality filtering in Supabase queries.
-            
-            Args:
-                column: Column to filter on
-                value: Value to compare with
-                
-            Returns:
-                Self for method chaining
-            """
+            """[MOCK] Method for equality filtering in Supabase queries."""
             return self
             
         def order(self, column):
-            """
-            Mock method for ordering results in Supabase queries.
-            
-            Args:
-                column: Column to order by
-                
-            Returns:
-                Self for method chaining
-            """
+            """[MOCK] Method for ordering results in Supabase queries."""
             return self
             
         def upsert(self, data, **kwargs):
-            """
-            Mock method for upserting data in Supabase.
-            
-            Args:
-                data: Data to upsert
-                **kwargs: Additional arguments
-                
-            Returns:
-                Self for method chaining
-            """
+            """[MOCK] Method for upserting data in Supabase."""
             return self
             
         def rpc(self, function_name, params=None):
-            """
-            Mock method for RPC calls in Supabase.
-            
-            Args:
-                function_name: Name of the function to call
-                params: Parameters to pass to the function
-                
-            Returns:
-                Self for method chaining
-            """
+            """[MOCK] Method for RPC calls in Supabase."""
             return self
             
         async def execute(self):
-            """
-            Mock method for executing Supabase queries.
-            
-            Returns:
-                Mock result object with empty data
-            """
+            """[MOCK] Method for executing Supabase queries."""
             class MockResult:
                 data = []
                 
@@ -193,6 +154,7 @@ except ImportError:
         if not os.path.exists(dir_path):
             os.makedirs(dir_path, exist_ok=True)
         return dir_path
+
     LOCAL_FILES_MODULE = False
 
 # Configure logging
@@ -230,8 +192,10 @@ class SupabaseError(MafiaError):
             # Handle the error appropriately
         ```
     """
-    
-    def __init__(self, message: Optional[str] = None, exception: Optional[Exception] = None):
+
+    def __init__(self,
+                 message: Optional[str] = None,
+                 exception: Optional[Exception] = None):
         """
         Initialize a new SupabaseError.
         
@@ -243,11 +207,10 @@ class SupabaseError(MafiaError):
 
 
 async def store_data_in_supabase_table(
-    async_supabase_client: Async_SupabaseClient,
-    table_name: str,
-    data: Dict[str, Any],
-    on_conflict: str = "url, chunk_number"
-) -> ResponseGetDataSupabase:
+        async_supabase_client: Async_SupabaseClient,
+        table_name: str,
+        data: Dict[str, Any],
+        on_conflict: str = "url, chunk_number") -> ResponseGetDataSupabase:
     """
     Store data in a Supabase table using upsert operation.
     
@@ -264,27 +227,29 @@ async def store_data_in_supabase_table(
         SupabaseError: If the data cannot be stored
     """
     if not SUPABASE_AVAILABLE:
-        raise SupabaseError("Supabase client not available. Please install the supabase package.")
-    
+        raise SupabaseError(
+            "Supabase client not available. Please install the supabase package."
+        )
+
     try:
         logger.debug(f"Storing data in table {table_name}")
-        
+
         # Execute upsert operation with provided data and conflict columns
         res = await async_supabase_client.table(table_name).upsert(
             data, on_conflict=on_conflict).execute()
-        
+
         # Convert result to standardized response format
         response = ResponseGetDataSupabase.from_res(res=res)
-        
+
         # Check for success
         if not response.is_success:
             error_msg = f"Failed to store data in {table_name}"
             logger.error(f"{error_msg}: {response.response}")
             raise SupabaseError(error_msg)
-            
+
         logger.info(f"Successfully stored data in {table_name}")
         return response
-        
+
     except Exception as e:
         error_msg = f"Error storing data in Supabase table {table_name}"
         logger.error(f"{error_msg}: {str(e)}")
@@ -292,10 +257,9 @@ async def store_data_in_supabase_table(
 
 
 async def get_document_urls_from_supabase(
-    async_supabase_client: Async_SupabaseClient,
-    source: Optional[str] = None,
-    table_name: str = "site_pages"
-) -> List[str]:
+        async_supabase_client: Async_SupabaseClient,
+        source: Optional[str] = None,
+        table_name: str = "site_pages") -> List[str]:
     """
     Retrieve a list of available document URLs from Supabase.
     
@@ -311,18 +275,21 @@ async def get_document_urls_from_supabase(
         SupabaseError: If URLs cannot be retrieved
     """
     if not SUPABASE_AVAILABLE:
-        raise SupabaseError("Supabase client not available. Please install the supabase package.")
-    
+        raise SupabaseError(
+            "Supabase client not available. Please install the supabase package."
+        )
+
     try:
-        logger.debug(f"Retrieving document URLs from {table_name}" + 
+        logger.debug(f"Retrieving document URLs from {table_name}" +
                      (f" with source '{source}'" if source else ""))
-        
+
         # Build query based on whether source filter is provided
         if source:
-            result = await async_supabase_client.from_(table_name).select("url").eq(
-                "metadata->>source", source).execute()
+            result = await async_supabase_client.table(table_name).select(
+                "url").eq("metadata->>source", source).execute()
         else:
-            result = await async_supabase_client.from_(table_name).select("url").execute()
+            result = await async_supabase_client.table(table_name).select(
+                "url").execute()
 
         # Handle empty results
         if not result.data:
@@ -367,10 +334,12 @@ def format_supabase_chunks(data: List[Dict[str, Any]]) -> List[str]:
     if not data:
         logger.warning("Empty data provided to format_supabase_chunks")
         return []
-        
+
     try:
-        return [f"# {doc.get('title', 'Untitled')}\n\n{doc.get('content', '')}" 
-                for doc in data if doc]
+        return [
+            f"# {doc.get('title', 'Untitled')}\n\n{doc.get('content', '')}"
+            for doc in data if doc
+        ]
     except Exception as e:
         logger.error(f"Error formatting chunks: {str(e)}")
         return [str(doc) for doc in data if doc]
@@ -404,26 +373,28 @@ def format_supabase_chunks_into_pages(data: List[Dict[str, Any]]) -> str:
         ```
     """
     if not data:
-        logger.warning("Empty data provided to format_supabase_chunks_into_pages")
+        logger.warning(
+            "Empty data provided to format_supabase_chunks_into_pages")
         return ""
-        
+
     try:
         # Extract page title from first chunk
         page_title = data[0].get("title", "Untitled")
         if " - " in page_title:
             page_title = page_title.split(" - ")[0]
-        
+
         # Format content with title and content from all chunks
         formatted_content = [f"# {page_title}\n"]
         for chunk in data:
             content = chunk.get("content", "")
             if content:
                 formatted_content.append(content)
-        
+
         return "\n\n".join(formatted_content)
     except Exception as e:
         logger.error(f"Error formatting page: {str(e)}")
-        return "\n\n".join([chunk.get("content", "") for chunk in data if chunk])
+        return "\n\n".join(
+            [chunk.get("content", "") for chunk in data if chunk])
 
 
 async def get_document_from_supabase(
@@ -450,30 +421,32 @@ async def get_document_from_supabase(
         SupabaseError: If document cannot be retrieved
     """
     if not SUPABASE_AVAILABLE:
-        raise SupabaseError("Supabase client not available. Please install the supabase package.")
-    
+        raise SupabaseError(
+            "Supabase client not available. Please install the supabase package."
+        )
+
     try:
         logger.debug(f"Retrieving document from {table_name} with URL: {url}")
-        
+
         # Build the query to get document data
         query = async_supabase_client.from_(table_name).select(
             "title, content, chunk_number").eq("url", url)
-            
+
         # Add source filter if provided
         if source:
             query = query.eq("metadata->>source", source)
-        
+
         # Execute query with chunk ordering
         result = await query.order("chunk_number").execute()
-        
+
         # Process results
         data = result.data or []
         logger.info(f"Retrieved {len(data)} chunks for document {url}")
-        
+
         # Return raw or formatted data
         if not format_fn:
             return data
-            
+
         # Apply formatter and return
         return cast(T, format_fn(data))
 
@@ -509,16 +482,19 @@ async def get_chunks_from_supabase(
         SupabaseError: If chunks cannot be retrieved
     """
     if not SUPABASE_AVAILABLE:
-        raise SupabaseError("Supabase client not available. Please install the supabase package.")
-    
+        raise SupabaseError(
+            "Supabase client not available. Please install the supabase package."
+        )
+
     try:
-        logger.debug(f"Retrieving chunks from {table_name} using vector search")
-        
+        logger.debug(
+            f"Retrieving chunks from {table_name} using vector search")
+
         # Prepare filter params if source is provided
         filter_params = {}
         if source:
             filter_params["source"] = source
-            
+
         # Execute vector similarity search
         result = await async_supabase_client.rpc(
             f"match_{table_name}",
@@ -528,15 +504,16 @@ async def get_chunks_from_supabase(
                 "filter": filter_params,
             },
         ).execute()
-        
+
         # Process results
         data = result.data or []
-        logger.info(f"Retrieved {len(data)} chunks for vector similarity search")
-        
+        logger.info(
+            f"Retrieved {len(data)} chunks for vector similarity search")
+
         # Return raw or formatted data
         if not format_fn:
             return data
-            
+
         # Apply formatter and return
         return cast(T, format_fn(data))
 
@@ -546,11 +523,8 @@ async def get_chunks_from_supabase(
         raise SupabaseError(error_msg, exception=e)
 
 
-def save_chunk_to_disk(
-    output_path: str,
-    data: Dict[str, Any],
-    **kwargs
-) -> bool:
+def save_chunk_to_disk(output_path: str, data: Dict[str, Any],
+                       **kwargs) -> bool:
     """
     Save a data chunk to disk as a markdown file with frontmatter.
     
@@ -595,7 +569,7 @@ def save_chunk_to_disk(
     try:
         # Ensure directory exists
         upsert_folder(output_path)
-        
+
         # Extract required fields
         try:
             url = data["url"]
@@ -603,36 +577,39 @@ def save_chunk_to_disk(
             content = data["content"]
         except KeyError as e:
             raise SupabaseError(f"Missing required field in data: {e}")
-        
+
         # Extract optional fields
         title = data.get("title")
         summary = data.get("summary")
         embedding = data.get("embedding")
         metadata = data.get("metadata")
         chunk_number = data.get("chunk_number")
-        
+
         # Build frontmatter and content
         output_lines = [
             "---",
             f"url: {url}",
             f"session_id: {source}",
-            f"chunk_number: {chunk_number}" if chunk_number is not None else None,
+            f"chunk_number: {chunk_number}"
+            if chunk_number is not None else None,
             f"title: {title}" if title is not None else None,
             f"summary: {summary}" if summary is not None else None,
             f"embedding: {embedding}" if embedding is not None else None,
-            f"metadata: {json.dumps(metadata)}" if metadata is not None else None,
+            f"metadata: {json.dumps(metadata)}"
+            if metadata is not None else None,
             f"updated_dt: {dt.datetime.now().isoformat()}",
             "---",
             content,
         ]
-        
+
         # Write to file, filtering out None values
         with open(output_path, "w+", encoding="utf-8") as f:
-            f.write("\n".join([line for line in output_lines if line is not None]))
-            
+            f.write("\n".join(
+                [line for line in output_lines if line is not None]))
+
         logger.info(f"Successfully saved chunk to {output_path}")
         return True
-        
+
     except Exception as e:
         error_msg = f"Error saving chunk to {output_path}"
         logger.error(f"{error_msg}: {str(e)}")
