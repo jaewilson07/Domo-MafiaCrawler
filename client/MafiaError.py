@@ -19,7 +19,7 @@ def generate_error_message(message=None, exception=None):
     """
     # Initialize default message
     formatted_message = "An unknown error occurred"
-    
+
     if exception:
         # Use exception message if no message was provided
         if message is None:
@@ -29,9 +29,10 @@ def generate_error_message(message=None, exception=None):
 
         # Add exception information
         type_name = 'unknown'
-        if hasattr(exception, '__class__') and hasattr(exception.__class__, '__name__'):
+        if hasattr(exception, '__class__') and hasattr(exception.__class__,
+                                                       '__name__'):
             type_name = exception.__class__.__name__
-            
+
         template = f"An exception of type {type_name} occurred."
 
         # Add exception arguments if available
@@ -40,7 +41,7 @@ def generate_error_message(message=None, exception=None):
             for arg in exception.args:
                 if arg is not None and str(arg):
                     args_str.append(str(arg))
-            
+
             if args_str:
                 template += f" Arguments: {','.join(args_str)}"
 
@@ -64,5 +65,7 @@ class MafiaError(Exception):
         message (str, optional): The main error message.
         exception (Exception, optional): The original exception that was caught.
     """
+
     def __init__(self, message=None, exception=None):
-        super().__init__(generate_error_message(message=message, exception=exception))
+        super().__init__(
+            generate_error_message(message=message, exception=exception))

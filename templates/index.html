@@ -1,0 +1,105 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Crawler</title>
+    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="mb-4">Web Crawler</h1>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        <div class="card">
+            <div class="card-header">
+                <h5>Configure Crawler</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('run_crawler') }}">
+                    <div class="mb-3">
+                        <label for="url" class="form-label">URL to Crawl</label>
+                        <input type="url" class="form-control" id="url" name="url" required
+                               placeholder="https://example.com">
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="depth" class="form-label">Crawl Depth</label>
+                                <input type="number" class="form-control" id="depth" name="depth" 
+                                       value="1" min="1" max="5">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="max_pages" class="form-label">Max Pages</label>
+                                <input type="number" class="form-control" id="max_pages" name="max_pages" 
+                                       value="10" min="1" max="100">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="format" class="form-label">Output Format</label>
+                                <select class="form-select" id="format" name="format">
+                                    <option value="json">JSON</option>
+                                    <option value="markdown">Markdown</option>
+                                    <option value="text">Text</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="extract_images" name="extract_images">
+                            <label class="form-check-label" for="extract_images">
+                                Extract Images
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="extract_links" name="extract_links" checked>
+                            <label class="form-check-label" for="extract_links">
+                                Extract Links
+                            </label>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Run Crawler</button>
+                </form>
+            </div>
+        </div>
+
+        {% if results %}
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5>Crawling Results</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-3">
+                    <span>{{ results.url }}</span>
+                    <a href="{{ url_for('download_result', filename=results.filename) }}" class="btn btn-sm btn-success">
+                        Download Results
+                    </a>
+                </div>
+                <div class="results-preview">
+                    {% if results.format == 'json' %}
+                        <pre class="bg-dark text-light p-3">{{ results.preview }}</pre>
+                    {% elif results.format == 'markdown' %}
+                        <div class="bg-dark text-light p-3">{{ results.preview | safe }}</div>
+                    {% else %}
+                        <pre class="bg-dark text-light p-3">{{ results.preview }}</pre>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>
+        

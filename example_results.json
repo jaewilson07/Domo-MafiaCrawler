@@ -1,0 +1,18 @@
+[
+  {
+    "url": "https://example.com",
+    "title": "Example Domain",
+    "content": "This domain is for use in illustrative examples in documents. You may use this domain in literature without prior coordination or asking for permission.\nMore information...",
+    "links": [
+      {
+        "url": "https://www.iana.org/domains/example",
+        "text": "More information...",
+        "title": ""
+      }
+    ],
+    "images": [],
+    "status_code": 200,
+    "success": true,
+    "timestamp": "2025-04-01T20:53:24.070480"
+  }
+]
