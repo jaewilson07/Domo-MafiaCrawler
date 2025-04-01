@@ -98,11 +98,7 @@ async def scrape_url(url: str,
     logger.info(f"Scraping URL: {url} with session ID: {session_id}")
 
     # Check if crawl4ai is available before attempting to use it
-    if not CRAWL4AI_AVAILABLE:
-        error_msg = "crawl4ai library is not installed. Please install it with: pip install crawl4ai"
-        logger.error(error_msg)
-        raise CrawlerRouteError(message=error_msg)
-
+    
     try:
         # Create a new crawler instance using the context manager pattern
         # This ensures proper cleanup of browser resources after crawling
@@ -201,12 +197,6 @@ async def crawl_urls(
         f"Starting crawl from URL: {starting_url} with session ID: {session_id}"
     )
     logger.info(f"Output folder: {output_folder}")
-
-    # Check if crawl4ai is available before attempting to use it
-    if not CRAWL4AI_AVAILABLE:
-        error_msg = "crawl4ai library is not installed. Please install it with: pip install crawl4ai"
-        logger.error(error_msg)
-        raise CrawlerRouteError(message=error_msg)
 
     try:
         # Initialize results list to store all crawled pages

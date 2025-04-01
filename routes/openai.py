@@ -25,25 +25,13 @@ from dataclasses import dataclass
 from typing import Union, Dict, List, Literal
 
 # Third-party imports
-try:
-    from openai import AsyncOpenAI
-    from openai import AsyncClient as AsyncOpenaiClient
-    OPENAI_AVAILABLE = True
-except ImportError:
-    OPENAI_AVAILABLE = False
-    # Create mock classes for type hints
-    class AsyncOpenAI:
-        """Mock class for AsyncOpenAI when the openai package is not available."""
-        def __init__(self, *args, **kwargs):
-            pass
-    
-    class AsyncOpenaiClient:
-        """Mock class for AsyncOpenaiClient when the openai package is not available."""
-        def __init__(self, *args, **kwargs):
-            pass
+from openai import AsyncClient as AsyncOpenaiClient
+from openai import ChatMessage, SystemMessage
 
 # Local application imports
 from client.ResponseGetData import ResponseGetDataOpenAi
+
+import routes.openai_routes as openai_routes
 
 
 def generate_openai_client(api_key: str,
@@ -82,10 +70,6 @@ def generate_openai_client(api_key: str,
         )
         ```
     """
-    if not OPENAI_AVAILABLE:
-        raise ImportError(
-            "openai package is not installed. Install it with: pip install openai"
-        )
 
     if is_ollama:
         return AsyncOpenaiClient(
@@ -150,7 +134,7 @@ class ChatMessage:
 
 
 async def generate_openai_chat(
-    async_client: AsyncOpenAI,
+    async_client: AsyncOpenaiClient,
     messages: List[ChatMessage],
     model: str = None,
     response_format: Union[Dict[str, str], None] = None,
@@ -203,10 +187,6 @@ async def generate_openai_chat(
         asyncio.run(example())
         ```
     """
-    if not OPENAI_AVAILABLE:
-        raise ImportError(
-            "openai package is not installed. Install it with: pip install openai"
-        )
     # Convert all messages to the proper format expected by OpenAI
     clean_message = [
         msg.to_json() if isinstance(msg, ChatMessage) else msg
@@ -237,7 +217,7 @@ async def generate_openai_chat(
 
 async def generate_openai_embedding(
     text: str,
-    async_client: AsyncOpenAI,
+    async_client: openai_routes.AsyncOpenClient,
     model: str = "text-embedding-3-small",
     return_raw: bool = False,
     debug_prn: bool = False,
@@ -290,10 +270,7 @@ async def generate_openai_embedding(
         - text-embedding-3-large: 3072 dimensions
         - text-embedding-ada-002: 1536 dimensions
     """
-    if not OPENAI_AVAILABLE:
-        raise ImportError(
-            "openai package is not installed. Install it with: pip install openai"
-        )
+
     # Print debug information if requested
     if debug_prn:
         print("📚 - starting LLM embedding generation")

@@ -62,149 +62,24 @@ import os
 import datetime as dt
 from typing import List, Dict, Callable, Optional, Any, Union, TypeVar, cast
 
-# Try to import third-party dependencies safely
-try:
-    # Third-party imports
-    from supabase import AsyncClient as AsyncSupabaseClient
-    SUPABASE_AVAILABLE = True
-except ImportError:
-    # Create a placeholder for type hints if supabase is not available
-    class AsyncSupabaseClient:
-        """
-        Placeholder for type hints when supabase is not available.
-        
-        This class mimics the structure of the Supabase AsyncClient to provide
-        type hints and code completion in environments where the Supabase package
-        is not installed. This allows for cleaner error handling and better
-        development experience.
-        
-        In a production environment, the real Async_SupabaseClient from the
-        supabase package should be used instead.
-        
-        Note:
-            These mock methods are only intended for LSP type checking and should not
-            be used in actual code. The SUPABASE_AVAILABLE flag should be checked
-            before attempting to use any Supabase functionality.
-        """
-        def __init__(self, *args, **kwargs):
-            """Initialize a placeholder client that will raise appropriate errors when used."""
-            import warnings
-            warnings.warn(
-                "Using mock Supabase client. Install the supabase package for actual functionality.",
-                DeprecationWarning, stacklevel=2
-            )
-            
-        def from_(self, table_name):
-            """[MOCK] Method for table selection in Supabase queries."""
-            return self
-            
-        def table(self, table_name):
-            """[MOCK] Method for table operations in Supabase."""
-            return self
-            
-        def select(self, columns):
-            """[MOCK] Method for column selection in Supabase queries."""
-            return self
-            
-        def eq(self, column, value):
-            """[MOCK] Method for equality filtering in Supabase queries."""
-            return self
-            
-        def order(self, column):
-            """[MOCK] Method for ordering results in Supabase queries."""
-            return self
-            
-        def upsert(self, data, **kwargs):
-            """[MOCK] Method for upserting data in Supabase."""
-            return self
-            
-        def rpc(self, function_name, params=None):
-            """[MOCK] Method for RPC calls in Supabase."""
-            return self
-            
-        async def execute(self):
-            """[MOCK] Method for executing Supabase queries."""
-            class MockResult:
-                data = []
-                
-            return MockResult()
-            
-    # Mark that Supabase is not available in this environment
-    SUPABASE_AVAILABLE = False
+from supabase import AsyncClient as AsyncSupabaseClient
 
 # Local application imports
 from client.MafiaError import MafiaError
 from client.ResponseGetData import ResponseGetDataSupabase
 
-# Try to import local utility modules or use built-in alternatives
-try:
-    from utils.files import upsert_folder
-    LOCAL_FILES_MODULE = True
-except ImportError:
-    # Fallback implementation if utils.files is not available
-    def upsert_folder(folder_path: str) -> str:
-        """
-        Simple fallback to ensure a folder exists for file operations.
-        
-        Args:
-            folder_path: Path to create
-            
-        Returns:
-            Absolute path to the folder
-        """
-        dir_path = os.path.dirname(os.path.abspath(folder_path))
-        if not os.path.exists(dir_path):
-            os.makedirs(dir_path, exist_ok=True)
-        return dir_path
+from utils.files import upsert_folder
+from utils.convert import convert_url_file_name
 
-    LOCAL_FILES_MODULE = False
-
-# Configure logging
 logger = logging.getLogger(__name__)
-
-# Type aliases for improved code readability and type checking
-T = TypeVar('T')  # Generic type for formatter functions
-Document = Dict[str, Any]  # Represents a single document or chunk
-DocumentList = List[Document]  # List of documents or chunks
-
-# These type aliases are used throughout the module to provide better type hints
-# and make the code more maintainable. Examples:
-# - T allows for generic formatting functions that can return any type
-# - Document represents a dictionary with string keys and any values (document data)
-# - DocumentList represents a list of Document objects (e.g., chunks of a page)
 
 
 class SupabaseError(MafiaError):
-    """
-    Custom exception for Supabase-related errors.
-    
-    This class extends MafiaError to provide consistent error handling for Supabase operations.
-    It adds helpful context about Supabase operations and wraps any original exceptions.
-    
-    Attributes:
-        message (str): Human-readable error description
-        exception (Exception): Original exception that was caught, if any
-        
-    Example:
-        ```python
-        try:
-            result = await get_document_from_supabase(client, "https://example.com")
-        except SupabaseError as e:
-            print(f"Supabase error occurred: {e}")
-            # Handle the error appropriately
-        ```
-    """
 
     def __init__(self,
                  message: Optional[str] = None,
                  exception: Optional[Exception] = None):
-        """
-        Initialize a new SupabaseError.
-        
-        Args:
-            message: Description of the error
-            exception: Original exception that was caught
-        """
+
         super().__init__(message=message, exception=exception)
 
 
@@ -228,10 +103,6 @@ async def store_data_in_supabase_table(
     Raises:
         SupabaseError: If the data cannot be stored
     """
-    if not SUPABASE_AVAILABLE:
-        raise SupabaseError(
-            "Supabase client not available. Please install the supabase package."
-        )
 
     try:
         logger.debug(f"Storing data in table {table_name}")
@@ -276,10 +147,6 @@ async def get_document_urls_from_supabase(
     Raises:
         SupabaseError: If URLs cannot be retrieved
     """
-    if not SUPABASE_AVAILABLE:
-        raise SupabaseError(
-            "Supabase client not available. Please install the supabase package."
-        )
 
     try:
         logger.debug(f"Retrieving document URLs from {table_name}" +
@@ -347,7 +214,7 @@ def format_supabase_chunks(data: List[Dict[str, Any]]) -> List[str]:
         return [str(doc) for doc in data if doc]
 
 
-def format_supabase_chunks_into_pages(data: List[Dict[str, Any]]) -> str:
+def format_supabase_chunks_into_pages(data: List[dict]) -> str:
     """
     Format multiple Supabase chunks into a single page.
     
@@ -400,12 +267,11 @@ def format_supabase_chunks_into_pages(data: List[Dict[str, Any]]) -> str:
 
 
 async def get_document_from_supabase(
-    async_supabase_client: AsyncSupabaseClient,
-    url: str,
-    table_name: str = "site_pages",
-    source: Optional[str] = None,
-    format_fn: Optional[Callable[[List[Dict[str, Any]]], T]] = None
-) -> Union[List[Dict[str, Any]], T]:
+        async_supabase_client: AsyncSupabaseClient,
+        url: str,
+        table_name: str = "site_pages",
+        source: Optional[str] = None,
+        format_fn: Optional[Callable] = None) -> Union[List[dict], None]:
     """
     Retrieve a document from Supabase by URL.
     
@@ -422,11 +288,6 @@ async def get_document_from_supabase(
     Raises:
         SupabaseError: If document cannot be retrieved
     """
-    if not SUPABASE_AVAILABLE:
-        raise SupabaseError(
-            "Supabase client not available. Please install the supabase package."
-        )
-
     try:
         logger.debug(f"Retrieving document from {table_name} with URL: {url}")
 
@@ -450,7 +311,7 @@ async def get_document_from_supabase(
             return data
 
         # Apply formatter and return
-        return cast(T, format_fn(data))
+        return format_fn(data)
 
     except Exception as e:
         error_msg = f"Error retrieving document for URL: {url}"
@@ -459,13 +320,12 @@ async def get_document_from_supabase(
 
 
 async def get_chunks_from_supabase(
-    async_supabase_client: AsyncSupabaseClient,
-    query_embedding: List[float],
-    table_name: str = "site_pages",
-    match_count: int = 5,
-    source: Optional[str] = None,
-    format_fn: Optional[Callable[[List[Dict[str, Any]]], T]] = None
-) -> Union[List[Dict[str, Any]], T]:
+        async_supabase_client: AsyncSupabaseClient,
+        query_embedding: List[float],
+        table_name: str = "site_pages",
+        match_count: int = 5,
+        source: Optional[str] = None,
+        format_fn: Optional[Callable] = None) -> Union[List[dict], str]:
     """
     Retrieve chunks from Supabase using vector similarity search.
     
@@ -483,11 +343,6 @@ async def get_chunks_from_supabase(
     Raises:
         SupabaseError: If chunks cannot be retrieved
     """
-    if not SUPABASE_AVAILABLE:
-        raise SupabaseError(
-            "Supabase client not available. Please install the supabase package."
-        )
-
     try:
         logger.debug(
             f"Retrieving chunks from {table_name} using vector search")
@@ -517,7 +372,7 @@ async def get_chunks_from_supabase(
             return data
 
         # Apply formatter and return
-        return cast(T, format_fn(data))
+        return format_fn(data)
 
     except Exception as e:
         error_msg = "Error retrieving chunks from vector similarity search"
@@ -525,7 +380,10 @@ async def get_chunks_from_supabase(
         raise SupabaseError(error_msg, exception=e)
 
 
-def save_chunk_to_disk(output_path: str, data: Dict[str, Any],
+def save_chunk_to_disk(data: Dict[str, Any],
+                       url: str = None,
+                       export_folder=None,
+                       output_path=None,
                        **kwargs) -> bool:
     """
     Save a data chunk to disk as a markdown file with frontmatter.
@@ -569,6 +427,8 @@ def save_chunk_to_disk(output_path: str, data: Dict[str, Any],
         ```
     """
     try:
+        output_path = output_path or f"{export_folder}/{convert_url_file_name(url)}.md"
+
         # Ensure directory exists
         upsert_folder(output_path)
 
