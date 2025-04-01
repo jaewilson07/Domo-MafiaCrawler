@@ -1,29 +1,36 @@
 
 {pkgs}: {
   deps = [
-    pkgs.postgresql
-    pkgs.openssl
-    pkgs.playwright-driver.browsers
-    pkgs.xvfb-run
-    pkgs.firefox
-    pkgs.chromium
-    pkgs.nss
-    pkgs.nspr
-    pkgs.dbus
-    pkgs.atk
+    pkgs.alsa-lib
     pkgs.at-spi2-atk
+    pkgs.at-spi2-core
+    pkgs.atk
+    pkgs.atkBridge
+    pkgs.cairo
+    pkgs.chromium
     pkgs.cups
+    pkgs.dbus
     pkgs.expat
+    pkgs.firefox
+    pkgs.gbm
+    pkgs.kbcommon
+    pkgs.libXcomposite
+    pkgs.libXdamage
+    pkgs.libXfixes
+    pkgs.libnss
+    pkgs.libudev
+    pkgs.nspr
+    pkgs.nss
+    pkgs.openssl
+    pkgs.pango
+    pkgs.playwright-driver.browsers
+    pkgs.postgresql
+    pkgs.smime
+    pkgs.udev
     pkgs.xorg.libXcomposite
     pkgs.xorg.libXdamage
     pkgs.xorg.libXfixes
-    pkgs.mesa
     pkgs.xorg.libxcb
-    pkgs.xkbcommon
-    pkgs.pango
-    pkgs.cairo
-    pkgs.udev
-    pkgs.alsa-lib
-    pkgs.at-spi2-core
+    pkgs.xvfb-run
   ];
 }
