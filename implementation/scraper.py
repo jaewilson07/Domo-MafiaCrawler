@@ -61,6 +61,8 @@ async def process_chunk(
     try:
         chunk_path = f"{export_folder}/chunks/{utcv.convert_url_file_name(url)}/{chunk_number}.md"
 
+        print(chunk_path, type(chunk_path))
+
         dependencies = CrawlerDependencies(
             async_supabase_client=async_supabase_client,
             async_openai_client=async_openai_client,

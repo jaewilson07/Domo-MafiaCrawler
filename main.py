@@ -10,7 +10,7 @@ import asyncio
 from typing import Optional
 from functools import partial
 
-# Configure logging to only show errors
+# Configure logging
 logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(__name__)
 
