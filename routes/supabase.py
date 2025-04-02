@@ -108,6 +108,12 @@ async def store_data_in_supabase_table(
         logger.debug(f"Storing data in table {table_name}")
 
         print(data.keys())
+        print({
+            'url': data['url'],
+            'chunk_number': data['chunk_number'],
+            'title': data['title'],
+            'metadata': data['metadata']
+        })
 
         # Execute upsert operation with provided data and conflict columns
         res = await async_supabase_client.table(table_name).upsert(

@@ -150,10 +150,9 @@ def read_md_from_disk(file_path: str) -> Tuple[str, Dict[str, Any]]:
             raise FileError(f"File does not exist", path=file_path)
 
         # Read file with frontmatter
-        with open(file_path, 'r', encoding='utf-8') as file:
-            data = frontmatter.loads(file)
+        data = frontmatter.Frontmatter.read(file_path)
 
-        return data.content, data.metadata
+        return data['body'], data['attributes']
 
     except FileError:
         # Re-raise FileError exceptions
