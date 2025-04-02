@@ -1,6 +1,23 @@
 
 { pkgs }: {
     deps = [
+      pkgs.at-spi2-core
+      pkgs.at-spi2-atk
+      pkgs.systemd
+      pkgs.alsa-lib
+      pkgs.libxkbcommon
+      pkgs.gtk3
+      pkgs.xorg.libxcb
+      pkgs.mesa
+      pkgs.expat
+      pkgs.dbus
+      pkgs.nspr
+      pkgs.nss
+      pkgs.xorg.libXfixes
+      pkgs.xorg.libXdamage
+      pkgs.xorg.libXcomposite
+      pkgs.playwright-driver
+      pkgs.gitFull
         pkgs.python311
         pkgs.python311Packages.pip
         pkgs.python311Packages.flask

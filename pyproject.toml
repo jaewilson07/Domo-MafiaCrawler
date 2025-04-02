@@ -16,6 +16,9 @@ dependencies = [
     "python-frontmatter>=1.1.0",
     "crawl4ai>=0.5.0",
     
+    # Browser automation dependencies
+    "playwright>=1.42.0",
+    
     # Integration dependencies
     "openai>=1.70.0",
     "psycopg2-binary>=2.9.10",
@@ -37,4 +40,4 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-packages = ["web_crawler_tool"]
+packages = ["client", "routes", "implementation", "utils"]
