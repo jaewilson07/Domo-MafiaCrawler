@@ -23,7 +23,9 @@ try:
     CRAWL4AI_AVAILABLE = True
 except ImportError:
     CRAWL4AI_AVAILABLE = False
-    print("Warning: crawl4ai module not available. Some functionality will be limited.")
+    print(
+        "Warning: crawl4ai module not available. Some functionality will be limited."
+    )
 
 # Configure path for client imports
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -35,17 +37,20 @@ try:
 except ImportError:
     CLIENT_MODULES_AVAILABLE = False
     print("Warning: client modules not available. Using basic error handling.")
-    
+
     # Define fallback classes
     class MafiaError(Exception):
+
         def __init__(self, message=None, exception=None):
             super().__init__(message)
             self.original_exception = exception
-    
+
     class ResponseGetDataCrawler:
+
         @classmethod
         def from_res(cls, res):
             return {"success": getattr(res, "success", False), "data": res}
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -163,7 +168,7 @@ async def scrape_url(url: str,
             if storage_fn:
                 logger.debug(f"Storing results for {url}")
                 try:
-                    storage_fn(rgd)
+                    storage_fn(rgd=rgd)
                 except Exception as e:
                     # Log storage errors but don't fail the entire operation
                     logger.warning(f"Error in storage callback: {str(e)}")
@@ -311,7 +316,11 @@ async def crawl_urls(
         raise CrawlerRouteError(exception=e) from e
 
 
-async def main(url, output_dir=None, max_pages=10, session_id=None, verbose=False):
+async def main(url,
+               output_dir=None,
+               max_pages=10,
+               session_id=None,
+               verbose=False):
     """
     Main entry point for command-line usage.
     """
@@ -323,54 +332,56 @@ async def main(url, output_dir=None, max_pages=10, session_id=None, verbose=Fals
     if session_id is None:
         import uuid
         session_id = str(uuid.uuid4())
-    
+
     if output_dir is None:
         output_dir = './export/crawler_output'
         os.makedirs(output_dir, exist_ok=True)
-    
+
     # Create configs
     browser_config = create_default_browser_config()
-    crawler_config = CrawlerRunConfig(
-        cache_mode=CacheMode.BYPASS,
-        max_pages=max_pages,
-        same_domain=True,
-        stream=True
-    )
-    
+    crawler_config = CrawlerRunConfig(cache_mode=CacheMode.BYPASS,
+                                      max_pages=max_pages,
+                                      same_domain=True,
+                                      stream=True)
+
     try:
         if CRAWL4AI_AVAILABLE:
             print(f"Starting crawler for URL: {url}")
             print(f"Output directory: {output_dir}")
             print(f"Session ID: {session_id}")
             print(f"Max pages: {max_pages}")
-            
+
             # Define storage function
             def save_to_disk(result):
                 try:
-                    filename = os.path.join(output_dir, f"{session_id}_{result.url.replace('://', '_').replace('/', '_')}.txt")
+                    filename = os.path.join(
+                        output_dir,
+                        f"{session_id}_{result.url.replace('://', '_').replace('/', '_')}.txt"
+                    )
                     with open(filename, 'w') as f:
-                        html_content = getattr(result, 'html', 'No HTML content available')
+                        html_content = getattr(result, 'html',
+                                               'No HTML content available')
                         f.write(f"URL: {result.url}\n\n")
                         f.write(html_content)
                     print(f"Saved content to {filename}")
                 except Exception as e:
                     print(f"Error saving content: {str(e)}")
-            
+
             # Start crawling
-            results = await crawl_urls(
-                starting_url=url,
-                session_id=session_id,
-                output_folder=output_dir,
-                crawler_config=crawler_config,
-                browser_config=browser_config,
-                storage_fn=save_to_disk,
-                delay_before_return_html=3
-            )
-            
+            results = await crawl_urls(starting_url=url,
+                                       session_id=session_id,
+                                       output_folder=output_dir,
+                                       crawler_config=crawler_config,
+                                       browser_config=browser_config,
+                                       storage_fn=save_to_disk,
+                                       delay_before_return_html=3)
+
             print(f"Crawling completed. Downloaded {len(results)} pages.")
             return results
         else:
-            print("Error: crawl4ai module is not available. Please install it with 'pip install crawl4ai'.")
+            print(
+                "Error: crawl4ai module is not available. Please install it with 'pip install crawl4ai'."
+            )
             return None
     except Exception as e:
         print(f"Error during crawling: {str(e)}")
@@ -383,21 +394,29 @@ async def main(url, output_dir=None, max_pages=10, session_id=None, verbose=Fals
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Web Crawler CLI")
     parser.add_argument("url", help="URL to crawl")
-    parser.add_argument("-o", "--output", help="Output directory for crawled content")
-    parser.add_argument("-m", "--max-pages", type=int, default=10, help="Maximum number of pages to crawl")
+    parser.add_argument("-o",
+                        "--output",
+                        help="Output directory for crawled content")
+    parser.add_argument("-m",
+                        "--max-pages",
+                        type=int,
+                        default=10,
+                        help="Maximum number of pages to crawl")
     parser.add_argument("-s", "--session-id", help="Session ID for the crawl")
-    parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose output")
-    
+    parser.add_argument("-v",
+                        "--verbose",
+                        action="store_true",
+                        help="Enable verbose output")
+
     args = parser.parse_args()
-    
+
     if not args.url.startswith(('http://', 'https://')):
         print("Error: URL must start with http:// or https://")
         sys.exit(1)
-    
-    asyncio.run(main(
-        url=args.url,
-        output_dir=args.output,
-        max_pages=args.max_pages,
-        session_id=args.session_id,
-        verbose=args.verbose
-    ))
+
+    asyncio.run(
+        main(url=args.url,
+             output_dir=args.output,
+             max_pages=args.max_pages,
+             session_id=args.session_id,
+             verbose=args.verbose))

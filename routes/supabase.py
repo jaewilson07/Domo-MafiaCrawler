@@ -380,7 +380,8 @@ async def get_chunks_from_supabase(
         raise SupabaseError(error_msg, exception=e)
 
 
-def save_chunk_to_disk(data: Dict[str, Any],
+def save_chunk_to_disk(rgd: ResponseGetDataSupabase = None,
+                       data: Dict[str, Any] = None,
                        url: str = None,
                        export_folder=None,
                        output_path=None,
@@ -426,19 +427,19 @@ def save_chunk_to_disk(data: Dict[str, Any],
         # This is the main content
         ```
     """
+    data = data or {}
     try:
-        output_path = output_path or f"{export_folder}/{convert_url_file_name(url)}.md"
+        output_path = output_path or f"{export_folder}/{convert_url_file_name(url or rgd and rgd.url)}.md"
 
         # Ensure directory exists
         upsert_folder(output_path)
 
         # Extract required fields
-        try:
-            url = data["url"]
-            source = data["source"]
-            content = data["content"]
-        except KeyError as e:
-            raise SupabaseError(f"Missing required field in data: {e}")
+
+        url = rgd and rgd.url or data and data["url"]
+        source = rgd and rgd.source or data and data["source"]
+        content = rgd and (rgd.markdown
+                           or rgd.html) or data and data["content"]
 
         # Extract optional fields
         title = data.get("title")

@@ -69,19 +69,15 @@ class ResponseGetDataOpenAi(ResponseGetData):
             Standardized response object with OpenAI data
         """
         try:
-            return cls(
-                is_success=True, 
-                status=200, 
-                response=getattr(res, 'choices', []), 
-                raw=res
-            )
+            return cls(is_success=True,
+                       status=200,
+                       response=getattr(res, 'choices', []),
+                       raw=res)
         except Exception as e:
-            return cls(
-                is_success=False,
-                status=500,
-                response=f"Error processing OpenAI response: {str(e)}",
-                raw=res
-            )
+            return cls(is_success=False,
+                       status=500,
+                       response=f"Error processing OpenAI response: {str(e)}",
+                       raw=res)
 
 
 @dataclass
@@ -96,6 +92,7 @@ class ResponseGetDataCrawler(ResponseGetData):
         markdown: Markdown representation of the page content
         raw: The raw crawler response object
     """
+    source: str = ""
     url: str = ""
     html: Any = field(default=None, repr=False)
     links: List[Dict] = field(default_factory=list, repr=False)
@@ -117,17 +114,16 @@ class ResponseGetDataCrawler(ResponseGetData):
         try:
             # Make sure res is properly formatted
             if not res:
-                return cls(
-                    is_success=False,
-                    status=400,
-                    response="No crawler results received",
-                    url=""
-                )
-                
+                return cls(is_success=False,
+                           status=400,
+                           response="No crawler results received",
+                           url="")
+
             # Handle both single result and list of results
             result = res[0] if isinstance(res, (list, tuple)) else res
-            
+
             return cls(
+                source=getattr(result, 'session_id', ''),
                 is_success=getattr(result, 'success', False),
                 status=getattr(result, 'status_code', 200),
                 response=getattr(result, 'cleaned_html', ""),
@@ -138,13 +134,11 @@ class ResponseGetDataCrawler(ResponseGetData):
                 raw=res,
             )
         except Exception as e:
-            return cls(
-                is_success=False,
-                status=500,
-                response=f"Error processing crawler response: {str(e)}",
-                url=getattr(res, 'url', "") if res else "",
-                raw=res
-            )
+            return cls(is_success=False,
+                       status=500,
+                       response=f"Error processing crawler response: {str(e)}",
+                       url=getattr(res, 'url', "") if res else "",
+                       raw=res)
 
 
 @dataclass
@@ -162,7 +156,9 @@ class ResponseGetDataSlack(ResponseGetData):
     app: Optional[AsyncSlackApp] = field(repr=False, default=None)
 
     @classmethod
-    def from_res(cls, res: AsyncSlackResponse, async_app: Optional[AsyncSlackApp] = None,
+    def from_res(cls,
+                 res: AsyncSlackResponse,
+                 async_app: Optional[AsyncSlackApp] = None,
                  **kwargs) -> 'ResponseGetDataSlack':
         """
         Create response object from Slack API response.
@@ -176,20 +172,16 @@ class ResponseGetDataSlack(ResponseGetData):
             Standardized response object with Slack data
         """
         try:
-            return cls(
-                is_success=res.get("ok", False),
-                response=getattr(res, 'data', res),
-                status=getattr(res, 'status_code', 200),
-                app=async_app,
-                **kwargs
-            )
+            return cls(is_success=res.get("ok", False),
+                       response=getattr(res, 'data', res),
+                       status=getattr(res, 'status_code', 200),
+                       app=async_app,
+                       **kwargs)
         except Exception as e:
-            return cls(
-                is_success=False,
-                status=500,
-                response=f"Error processing Slack response: {str(e)}",
-                app=async_app
-            )
+            return cls(is_success=False,
+                       status=500,
+                       response=f"Error processing Slack response: {str(e)}",
+                       app=async_app)
 
 
 @dataclass
@@ -216,20 +208,17 @@ class ResponseGetDataSupabase(ResponseGetData):
         """
         try:
             is_success = False
-            
+
             if hasattr(res, 'data') and res.data:
                 is_success = True
-                
-            return cls(
-                is_success=is_success,
-                response=getattr(res, 'data', None),
-                status=200 if is_success else 400,
-                raw=res
-            )
+
+            return cls(is_success=is_success,
+                       response=getattr(res, 'data', None),
+                       status=200 if is_success else 400,
+                       raw=res)
         except Exception as e:
             return cls(
                 is_success=False,
                 status=500,
                 response=f"Error processing Supabase response: {str(e)}",
-                raw=res
-            )
+                raw=res)

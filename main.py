@@ -1,5 +1,6 @@
 import routes.crawler as crawler_routes
 import routes.supabase as supabase_routes
+import routes.openai as openai_routes
 import implementation.scraper as scraper
 
 # Standard library imports
@@ -9,12 +10,13 @@ import asyncio
 from typing import Optional
 from functools import partial
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
+# Configure logging to only show errors
+logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(__name__)
 
 # Configure the crawler
-domain_filter = crawler_routes.DomainFilter(allowed_domains=["https://docs.slack.dev/admins/managing-users"])
+domain_filter = crawler_routes.DomainFilter(
+    allowed_domains=["https://docs.slack.dev/admins/managing-users"])
 
 browser_config = crawler_routes.BrowserConfig(
     browser_type="chromium",
@@ -34,6 +36,12 @@ config = crawler_routes.CrawlerRunConfig(
     verbose=True,
 )
 
+supabase_client = supabase_routes.AsyncSupabaseClient(
+    os.environ["SUPABASE_URL"], os.environ["SUPABASE_ANON_KEY"])
+
+async_openai_client = openai_routes.AsyncOpenaiClient(
+    api_key=os.environ["OPENAI_API_KEY"])
+
 
 async def main(debug_prn: bool = False):
     """Main function to crawl URLs and process the results."""
@@ -51,7 +59,13 @@ async def main(debug_prn: bool = False):
         session_id=source,
         storage_fn=partial(supabase_routes.save_chunk_to_disk,
                            export_folder=export_folder),
-        process_fn=partial(scraper.process_rgd, export),
+        process_fn=partial(
+            scraper.process_rgd,
+            export_folder=export_folder,
+            supabase_client=supabase_client,
+            async_embedding_client=async_openai_client,
+            async_openai_client=async_openai_client,
+        ),
         output_folder=export_folder,
     )
 

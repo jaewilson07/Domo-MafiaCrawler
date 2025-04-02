@@ -231,7 +231,7 @@ class Crawler_ProcessedChunk:
         system_prompt = prompt_extract_title_and_summary
 
         messages = [
-            openai_routes.SystemMessage(role="system", content=system_prompt),
+            openai_routes.ChatMessage(role="system", content=system_prompt),
             openai_routes.ChatMessage(
                 role="user",
                 content=f"URL: {self.url}\n\nContent:\n{self.content[:1000]}..."
