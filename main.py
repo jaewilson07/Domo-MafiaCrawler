@@ -37,7 +37,7 @@ config = crawler_routes.CrawlerRunConfig(
 )
 
 supabase_client = supabase_routes.AsyncSupabaseClient(
-    os.environ["SUPABASE_URL"], os.environ["SUPABASE_ANON_KEY"])
+    os.environ["SUPABASE_URL"], os.environ["SUPABASE_SERVICE_KEY"])
 
 async_openai_client = openai_routes.AsyncOpenaiClient(
     api_key=os.environ["OPENAI_API_KEY"])
