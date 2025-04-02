@@ -12,6 +12,11 @@
         # Development tools
         pkgs.nodePackages.typescript
         pkgs.git
+        pkgs.chromium
+        pkgs.firefox
+        pkgs.playwright-driver.browsers
+        pkgs.postgresql
+        pkgs.xvfb-run
     ];
     env = {
         PYTHONPATH = "${pkgs.python311}/bin/python3";

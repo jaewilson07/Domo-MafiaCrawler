@@ -5,15 +5,15 @@ import implementation.scraper as scraper
 # Standard library imports
 import os
 import logging
+import asyncio
 from typing import Optional
 from functools import partial
-from crawl4ai import BrowserConfig
-
-import asyncio
 
 # Configure logging
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Configure the crawler
 domain_filter = crawler_routes.DomainFilter(allowed_domains=["docs.slack.dev"])
 
 browser_config = crawler_routes.BrowserConfig(
@@ -36,10 +36,14 @@ config = crawler_routes.CrawlerRunConfig(
 
 
 async def main(debug_prn: bool = False):
-
+    """Main function to crawl URLs and process the results."""
     export_folder = "./export/slack_apis/"
     source = "slack_api_docs"
 
+    # Ensure the export folder exists
+    os.makedirs(export_folder, exist_ok=True)
+
+    # Crawl URLs
     res = await crawler_routes.crawl_urls(
         starting_url="https://docs.slack.dev/apis/",
         crawler_config=config,
@@ -51,8 +55,12 @@ async def main(debug_prn: bool = False):
         output_folder=export_folder,
     )
 
+    if debug_prn:
+        logger.info(f"Completed crawling with results: {res}")
+
     return res
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    """Run the main program directly."""
+    asyncio.run(main(debug_prn=True))
