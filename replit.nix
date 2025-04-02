@@ -1,6 +1,8 @@
 
 { pkgs }: {
     deps = [
+      pkgs.playwright
+      pkgs.python311Packages.playwright
       pkgs.at-spi2-core
       pkgs.at-spi2-atk
       pkgs.systemd
@@ -38,5 +40,7 @@
     env = {
         PYTHONPATH = "${pkgs.python311}/bin/python3";
         PIP_DISABLE_PIP_VERSION_CHECK = "1";
+        PLAYWRIGHT_BROWSERS_PATH = "${pkgs.playwright-driver.browsers}";
+        PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS = true;
     };
 }
