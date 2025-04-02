@@ -179,21 +179,21 @@ class Crawler_ProcessedChunk:
             raise PC_PathNotExist(md_path)
 
         try:
-            content, frontmatter = utfi.read_md_from_disk(md_path)
+            content, fm = utfi.read_md_from_disk(md_path)
 
             # Get values with defaults for required fields
-            url = frontmatter.get("url", "unknown-url")
-            source = frontmatter.get("session_id", "unknown-source")
-            chunk_number = frontmatter.get("chunk_number", 0)
+            url = fm.get("url", "unknown-url")
+            source = fm.get("session_id", "unknown-source")
+            chunk_number = fm.get("chunk_number", 0)
 
             # Create the chunk
             res = cls(
                 url=url,
                 source=source,
                 chunk_number=chunk_number,
-                title=frontmatter.get("title", ""),
-                summary=frontmatter.get("summary", ""),
-                embedding=frontmatter.get("embedding", []),
+                title=fm.get("title", ""),
+                summary=fm.get("summary", ""),
+                embedding=fm.get("embedding", []),
                 content=content,
                 Dependencies=dependencies,
             )

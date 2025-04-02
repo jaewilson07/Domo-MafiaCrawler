@@ -111,6 +111,7 @@ class ResponseGetDataCrawler(ResponseGetData):
         Returns:
             Standardized response object with crawled data
         """
+
         try:
             # Make sure res is properly formatted
             if not res:

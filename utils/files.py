@@ -150,18 +150,15 @@ def read_md_from_disk(file_path: str) -> Tuple[str, Dict[str, Any]]:
             raise FileError(f"File does not exist", path=file_path)
 
         # Read file with frontmatter
-        data = frontmatter.Frontmatter.read(file_path)
+        data = frontmatter.Frontmatter.read_file(file_path)
 
-        return data['body'], data['attributes']
+        return data['body'], data.get('attributes', {})
 
-    except FileError:
-        # Re-raise FileError exceptions
-        raise
     except Exception as e:
         logger.error(f"Error reading markdown file {file_path}: {str(e)}")
         raise FileError("Failed to read markdown file",
                         path=file_path,
-                        exception=e)
+                        exception=e) from e
 
 
 def get_file_extension(path: str) -> str:

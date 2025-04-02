@@ -15,25 +15,12 @@ logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(__name__)
 
 # Configure the crawler
-domain_filter = crawler_routes.DomainFilter(
-    allowed_domains=["https://docs.slack.dev/admins/managing-users"])
 
 browser_config = crawler_routes.BrowserConfig(
     browser_type="chromium",
     headless=True,
     verbose=True,
     extra_args=["--disable-gpu", "--disable-dev-shm-usage", "--no-sandbox"],
-)
-
-config = crawler_routes.CrawlerRunConfig(
-    cache_mode=crawler_routes.CacheMode.BYPASS,
-    deep_crawl_strategy=crawler_routes.BFSDeepCrawlStrategy(
-        max_depth=1,
-        filter_chain=crawler_routes.FilterChain([domain_filter]),
-        include_external=False,
-    ),
-    stream=True,
-    verbose=True,
 )
 
 supabase_client = supabase_routes.AsyncSupabaseClient(
@@ -47,6 +34,20 @@ async def main(debug_prn: bool = False):
     """Main function to crawl URLs and process the results."""
     export_folder = "./export/slack_apis/"
     source = "slack_api_docs"
+
+    domain_filter = crawler_routes.DomainFilter(
+        allowed_domains=["https://docs.slack.dev/admins/managing-users"])
+
+    config = crawler_routes.CrawlerRunConfig(
+        cache_mode=crawler_routes.CacheMode.BYPASS,
+        deep_crawl_strategy=crawler_routes.BFSDeepCrawlStrategy(
+            max_depth=1,
+            filter_chain=crawler_routes.FilterChain([domain_filter]),
+            include_external=False,
+        ),
+        stream=True,
+        verbose=True,
+        session_id=source)
 
     # Ensure the export folder exists
     os.makedirs(export_folder, exist_ok=True)
