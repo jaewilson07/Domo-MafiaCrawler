@@ -1,14 +1,16 @@
 import routes.crawler as crawler_routes
 import routes.supabase as supabase_routes
-import routes.openai as openai_routes
 import implementation.scraper as scraper
+import utils.convert as utcv
+import json
 
 # Standard library imports
 import os
 import logging
-import asyncio
-from typing import Optional
+from typing import List
 from functools import partial
+from supabase import AsyncClient as AsyncSupabaseClient
+from openai import AsyncClient as AsyncOpenaiClient
 
 # Configure logging
 logging.basicConfig(level=logging.ERROR)
@@ -23,59 +25,94 @@ browser_config = crawler_routes.BrowserConfig(
     extra_args=["--disable-gpu", "--disable-dev-shm-usage", "--no-sandbox"],
 )
 
-supabase_client = supabase_routes.AsyncSupabaseClient(
-    os.environ["SUPABASE_URL"], os.environ["SUPABASE_SERVICE_KEY"])
+supabase_client = AsyncSupabaseClient(
+    os.environ["SUPABASE_URL"], os.environ["SUPABASE_SERVICE_KEY"]
+)
 
-async_openai_client = openai_routes.AsyncOpenaiClient(
-    api_key=os.environ["OPENAI_API_KEY"])
+async_openai_client = AsyncOpenaiClient(api_key=os.environ["OPENAI_API_KEY"])
 
 
-async def main(debug_prn: bool = False):
+async def main(
+    starting_url: str,
+    allowed_domains: List[str],
+    export_folder: str,
+    source: str,
+    debug_prn: bool = False,
+):
     """Main function to crawl URLs and process the results."""
-    export_folder = "./export/slack_apis/"
-    source = "slack_api_docs"
 
-    domain_filter = crawler_routes.DomainFilter(
-        allowed_domains=["https://docs.slack.dev/admins/managing-users"])
+    allowed_domains = allowed_domains or [utcv.extract_domain(starting_url)]
+
+    domain_filter = crawler_routes.DomainFilter(allowed_domains=allowed_domains)
 
     config = crawler_routes.CrawlerRunConfig(
+        magic=True,
         cache_mode=crawler_routes.CacheMode.BYPASS,
         deep_crawl_strategy=crawler_routes.BFSDeepCrawlStrategy(
-            max_depth=1,
+            max_depth=20,
             filter_chain=crawler_routes.FilterChain([domain_filter]),
             include_external=False,
         ),
         stream=True,
-        verbose=True,
-        session_id=source)
+        verbose=False,
+        session_id=source,
+    )
 
-    # Ensure the export folder exists
-    os.makedirs(export_folder, exist_ok=True)
+    storage_fn = partial(
+        supabase_routes.save_chunk_to_disk, export_folder=export_folder
+    )
 
+    process_fn = partial(
+        scraper.process_rgd,
+        export_folder=export_folder,
+        supabase_client=supabase_client,
+        async_embedding_client=async_openai_client,
+        async_openai_client=async_openai_client,
+    )
     # Crawl URLs
-    res = await crawler_routes.crawl_urls(
-        starting_url="https://docs.slack.dev/admins/managing-users",
+    with open("LOGS/crawl_progress_mermaid_js_docs.log", "r") as f:
+        logs = json.loads(f.read())
+
+    await crawler_routes.crawl_urls(
+        logs=logs,
+        starting_url=starting_url,
         crawler_config=config,
         browser_config=browser_config,
         session_id=source,
-        storage_fn=partial(supabase_routes.save_chunk_to_disk,
-                           export_folder=export_folder),
-        process_fn=partial(
-            scraper.process_rgd,
-            export_folder=export_folder,
-            supabase_client=supabase_client,
-            async_embedding_client=async_openai_client,
-            async_openai_client=async_openai_client,
-        ),
-        output_folder=export_folder,
+        storage_fn=storage_fn,
+        process_fn=process_fn,
     )
 
-    if debug_prn:
-        logger.info(f"Completed crawling with results: {res}")
+    # if logs.get("failed"):
+    #     crawler_routes.crawl_url(
+    #         logs=logs,
+    #         crawler_config=config,
+    #         browser_config=browser_config,
+    #         session_id=source,
+    #         storage_fn=storage_fn,
+    #         process_fn=process_fn,
+    #     )
 
-    return res
+    # if debug_prn:
+    #     logger.info("Completed crawling with results: %s", res)
+
+    # return res
 
 
 if __name__ == "__main__":
-    """Run the main program directly."""
-    asyncio.run(main(debug_prn=True))
+    import asyncio
+
+    STARTING_URL = "https://mermaid.js.org/"
+    ALLOWED_DOMAINS = ["mermaid.js.org", "mermaid-js.github.io"]
+    EXPORT_FOLDER = "EXPORT/"
+    SOURCE = "mermaid_js_docs"
+
+    asyncio.run(
+        main(
+            starting_url=STARTING_URL,
+            allowed_domains=ALLOWED_DOMAINS,
+            export_folder=EXPORT_FOLDER,
+            source=SOURCE,
+            debug_prn=False,
+        )
+    )

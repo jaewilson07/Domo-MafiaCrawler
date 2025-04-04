@@ -1,23 +1,17 @@
 from client.MafiaError import MafiaError
 
-from client.ResponseGetData import ResponseGetData
 import utils.files as utfi
 import utils.convert as utcv
 import utils.chunking as utch
 import utils.chunk_execution as utce
 
-from routes import openai as openai_routes
 from routes import crawler as crawler_routes
 from routes import supabase as supabase_routes
 
 # Standard library imports
-import os
-import logging
-from dataclasses import dataclass, field
-from typing import Union, List, Optional
+from dataclasses import dataclass
+from typing import List
 from urllib.parse import urlparse
-import datetime as dt
-from functools import partial
 
 # Set up logger
 logger = logging.getLogger(__name__)
@@ -36,9 +30,7 @@ async def read_url(
         content, _ = utfi.read_md_from_disk(doc_path)
 
         if debug_prn:
-            print(
-                f"🛢️  {url} - scraping not required, file retrieved from - {doc_path}"
-            )
+            print(f"🛢️  {url} - scraping not required, file retrieved from - {doc_path}")
 
         return content
 
@@ -47,11 +39,13 @@ async def read_url(
         output_path=doc_path,
     )
 
-    res = await crawler_routes.scrape_url(url=url,
-                                          session_id=source,
-                                          browser_config=browser_config,
-                                          crawler_config=crawler_config,
-                                          storage_fn=storage_fn)
+    res = await crawler_routes.scrape_url(
+        url=url,
+        session_id=source,
+        browser_config=browser_config,
+        crawler_config=crawler_config,
+        storage_fn=storage_fn,
+    )
     if debug_prn:
         print(f"🛢️  {url} - page scraped to {doc_path}")
 
@@ -92,8 +86,7 @@ async def process_url(
         list: The processed chunks, or False if error
     """
     # Use provided configs or defaults if available
-    browser_config = browser_config or crawler_routes.create_default_browser_config(
-    )
+    browser_config = browser_config or crawler_routes.create_default_browser_config()
 
     # Create document path
     doc_path = f"{export_folder}/{utcv.convert_url_file_name(url)}.md"
@@ -142,7 +135,8 @@ async def process_url(
                     export_folder=export_folder,
                     debug_prn=debug_prn,
                     is_replace_llm_metadata=is_replace_llm_metadata,
-                ) for idx, chunk in enumerate(chunks)
+                )
+                for idx, chunk in enumerate(chunks)
             ],
             n=max_conccurent_requests,
         )
@@ -232,7 +226,8 @@ async def process_urls(
                     async_openai_client=async_openai_client,
                     async_supabase_client=async_supabase_client,
                     async_embedding_client=async_embedding_client,
-                ) for url in valid_urls
+                )
+                for url in valid_urls
             ],
             n=max_conccurent_requests,
         )

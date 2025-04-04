@@ -1,4 +1,4 @@
-from typing import Union, List, Callable, Union
+from typing import Union, List, Callable
 
 
 def calc_end_codeblock(chunk, chunk_size, start) -> Union[int, bool]:
@@ -33,16 +33,14 @@ def functions_stop_on_value(functions: List[Callable], **kwargs):
     return next((fn(**kwargs) for fn in functions if fn(**kwargs)), None)
 
 
-default_calc_end_fns = [
-    calc_end_codeblock, calc_end_paragraph, calc_end_sentence
-]
+default_calc_end_fns = [calc_end_codeblock, calc_end_paragraph, calc_end_sentence]
 
 
 def chunk_text(
     text: str,  # text to chunk
     calc_end_fns: Union[
-        List[Callable],
-        None] = None,  # list of functions to calculate the end of a chunk
+        List[Callable], None
+    ] = None,  # list of functions to calculate the end of a chunk
     chunk_size: int = 5000,
     debug_prn: bool = False,
 ) -> List[str]:
@@ -62,10 +60,12 @@ def chunk_text(
         # handle code block
         chunk = text[start:end]
 
-        end = (functions_stop_on_value(functions=calc_end_fns,
-                                       chunk=chunk,
-                                       chunk_size=chunk_size,
-                                       start=start) or end)
+        end = (
+            functions_stop_on_value(
+                functions=calc_end_fns, chunk=chunk, chunk_size=chunk_size, start=start
+            )
+            or end
+        )
 
         chunk = text[start:end].strip()
 

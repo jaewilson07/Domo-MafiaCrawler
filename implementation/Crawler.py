@@ -2,27 +2,19 @@ from client.MafiaError import MafiaError
 
 from client.ResponseGetData import ResponseGetData
 import utils.files as utfi
-import utils.convert as utcv
-import utils.chunking as utch
-import utils.chunk_execution as utce
 
 from routes import openai as openai_routes
-from routes import crawler as crawler_routes
 from routes import supabase as supabase_routes
 
 # Standard library imports
 import os
-import logging
 from dataclasses import dataclass, field
-from typing import Union, List, Optional
+from typing import List, Union, Optional
 from urllib.parse import urlparse
 import datetime as dt
-from functools import partial
+import logging
 
-# Set up logger
 logger = logging.getLogger(__name__)
-
-# Utility imports with robust error handling
 
 prompt_extract_title_and_summary = """
 You are an AI that extracts titles and summaries from documentation chunks.
@@ -82,8 +74,7 @@ class Crawler_ProcessedChunk:
     embedding: List[float] = field(default_factory=list)
     error_logs: List[str] = field(default_factory=list)
     Metadata: Union[Crawler_ProcessedChunk_Metadata, None] = None
-    Dependencies: Optional[CrawlerDependencies] = field(default=None,
-                                                        repr=False)
+    Dependencies: Optional[CrawlerDependencies] = field(default=None, repr=False)
 
     def __eq__(self, other):
         if self.__class__.__name__ != other.__class__.__name__:
@@ -121,13 +112,15 @@ class Crawler_ProcessedChunk:
         return self
 
     @classmethod
-    def from_chunk(cls,
-                   content: str,
-                   chunk_number: int,
-                   url: str,
-                   source: str,
-                   output_path=None,
-                   dependencies=None):
+    def from_chunk(
+        cls,
+        content: str,
+        chunk_number: int,
+        url: str,
+        source: str,
+        output_path=None,
+        dependencies=None,
+    ):
         """
         Create a Crawler_ProcessedChunk from a content chunk.
 
@@ -164,7 +157,7 @@ class Crawler_ProcessedChunk:
         return chk
 
     @classmethod
-    def from_md_file(cls, md_path, dependencies=None):
+    def from_md_file(cls, md_path, dependencies=None, is_suppress_error=False):
         """
         Create a Crawler_ProcessedChunk from a markdown file.
 
@@ -200,9 +193,13 @@ class Crawler_ProcessedChunk:
 
             return res
 
-        except Exception as e:
-            logger.error(f"Error loading markdown file {md_path}: {str(e)}")
-            return False
+        except utfi.ReadMarkdown_Exception as e:
+            logger.error("Error loading markdown file %s: %s", md_path, str(e))
+
+            if is_suppress_error:
+                return False
+
+            raise e from e
 
     async def get_title_and_summary(
         self,
@@ -213,19 +210,19 @@ class Crawler_ProcessedChunk:
     ) -> Union[ResponseGetData, dict]:
         # Get client either from parameter or from Dependencies
         async_client = None
-        if self.Dependencies and hasattr(self.Dependencies,
-                                         'async_openai_client'):
+        if self.Dependencies and hasattr(self.Dependencies, "async_openai_client"):
             async_client = self.Dependencies.async_openai_client
 
         if async_client is None:
             logger.warning(
-                "No OpenAI client provided and none available in Dependencies")
+                "No OpenAI client provided and none available in Dependencies"
+            )
             self.error_logs.append("No OpenAI client available")
             return {"error": "No OpenAI client available"}
 
         if not is_replace_llm_metadata and self.title and self.summary:
             if debug_prn:
-                print(f"🛢️ {self.url} title and summary already exists")
+                logger.info("🛢️ %s title and summary already exists", self.url)
             return {"title": self.title, "summary": self.summary}
 
         system_prompt = prompt_extract_title_and_summary
@@ -234,8 +231,8 @@ class Crawler_ProcessedChunk:
             openai_routes.ChatMessage(role="system", content=system_prompt),
             openai_routes.ChatMessage(
                 role="user",
-                content=f"URL: {self.url}\n\nContent:\n{self.content[:1000]}..."
-            )  # Send first 1000 chars for context
+                content=f"URL: {self.url}\n\nContent:\n{self.content[:1000]}...",
+            ),  # Send first 1000 chars for context
         ]
 
         try:
@@ -257,7 +254,7 @@ class Crawler_ProcessedChunk:
 
         except Exception as e:
             message = f"Error getting title and summary: {str(e)}"
-            logger.error(message)
+            logger.error("Error getting title and summary: %s", str(e))
             self.error_logs.append(message)
             return {"error": message}
 
@@ -269,18 +266,23 @@ class Crawler_ProcessedChunk:
         debug_prn: bool = False,
     ) -> Union[ResponseGetData, List[float]]:
         # Get client either from parameter or from Dependencies
-        async_client = self.Dependencies.async_openai_client if self.Dependencies and hasattr(
-            self.Dependencies, 'async_embedding_client') else None
+        async_client = (
+            self.Dependencies.async_openai_client
+            if self.Dependencies
+            and hasattr(self.Dependencies, "async_embedding_client")
+            else None
+        )
 
         if async_client is None:
             logger.warning(
-                "No OpenAI client provided and none available in Dependencies")
+                "No OpenAI client provided and none available in Dependencies"
+            )
             self.error_logs.append("No OpenAI client available")
             return []
 
         if not is_replace_llm_metadata and self.embedding:
             if debug_prn:
-                print(f"🛢️  {self.url} embedding already retrieved")
+                logger.info("🛢️  %s embedding already retrieved", self.url)
             return self.embedding
 
         try:
@@ -300,7 +302,7 @@ class Crawler_ProcessedChunk:
 
         except Exception as e:
             message = f"Error creating embedding: {str(e)}"
-            logger.error(message)
+            logger.error("Error creating embedding: %s", str(e))
             self.error_logs.append(message)
             return []
 
@@ -344,13 +346,14 @@ class Crawler_ProcessedChunk:
         # Save to disk if output path provided
         if output_path:
             try:
-                supabase_routes.save_chunk_to_disk(output_path=output_path,
-                                                   data=self.to_json())
+                supabase_routes.save_chunk_to_disk(
+                    output_path=output_path, data=self.to_json()
+                )
                 if debug_prn:
-                    logger.info(f"Saved chunk to {output_path}")
+                    logger.info("Saved chunk to %s", output_path)
             except Exception as e:
                 error_msg = f"Failed to save chunk to disk: {str(e)}"
-                logger.error(error_msg)
+                logger.error("Failed to save chunk to disk: %s", str(e))
                 self.error_logs.append(error_msg)
 
         return self
