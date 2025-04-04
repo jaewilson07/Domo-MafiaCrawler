@@ -1,0 +1,8 @@
+# Supabase configuration
+
+SUPABASE_URL=<your-supabase-url>
+SUPABASE_KEY=<your-supabase-key>
+
+# OpenAI configuration
+
+OPENAI_API_KEY=<your-openai-api-key>
