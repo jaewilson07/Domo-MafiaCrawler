@@ -29,7 +29,7 @@ async def retrieve_llm(ctx, user_query: str) -> str:
 
     table_query = {
         "query_embedding": query_embedding,
-        "match_count": 5,
+        "match_count": 10,
     }
 
     if ctx.deps.expertise:
