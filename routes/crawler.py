@@ -10,6 +10,9 @@ standardized response formatting via ResponseGetDataCrawler objects.
 
 # required Exports
 from crawl4ai.deep_crawling import BFSDeepCrawlStrategy
+from crawl4ai.content_filter_strategy import PruningContentFilter
+from crawl4ai.markdown_generation_strategy import DefaultMarkdownGenerator
+
 from crawl4ai.deep_crawling.filters import FilterChain, DomainFilter
 
 # Standard library imports
@@ -127,7 +130,7 @@ def log_summary(results: list):
 
 async def crawl_url(
     url: str,
-    session_id: str,
+    session_id: str = None,
     browser_config: Optional[BrowserConfig] = None,
     crawler_config: Optional[CrawlerRunConfig] = None,
     storage_fn: Optional[Callable] = None,

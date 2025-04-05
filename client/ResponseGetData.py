@@ -129,6 +129,11 @@ class ResponseGetDataCrawler(ResponseGetData):
             # Handle both single result and list of results
             result = res[0] if isinstance(res, (list, tuple)) else res
 
+            md = getattr(result, "markdown", None)
+
+            if md:
+                md = getattr(md, "fit_markdown", None) or md
+
             return cls(
                 source=getattr(result, "session_id", ""),
                 is_success=getattr(result, "success", False),
@@ -137,7 +142,7 @@ class ResponseGetDataCrawler(ResponseGetData):
                 url=getattr(result, "url", ""),
                 html=getattr(result, "html", None),
                 links=getattr(result, "links", []),
-                markdown=getattr(result, "markdown", None),
+                markdown=md,
                 raw=res,
             )
         except Exception as e:

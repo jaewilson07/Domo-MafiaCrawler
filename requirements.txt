@@ -1,6 +1,11 @@
+# for crawling sites
 slack-bolt
 python-dotenv
 python-frontmatter
 crawl4ai
 openai
 supabase
+
+# for streamlit chatbot
+pydantic-ai
+streamlit
